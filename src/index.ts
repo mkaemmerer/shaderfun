@@ -9,6 +9,8 @@ import {
   scale,
   mirrorX,
   mirrorY,
+  repeatGrid,
+  repeatPolar,
   dilate,
   outline,
   invert,
@@ -37,7 +39,13 @@ const poly = invert(
   )
 )
 
-const sdf = union(poly, union(cross, circles))
+const sdf = repeatGrid(1000)(
+  scale(0.3)(
+    repeatPolar(5)(
+      translate({ x: 800, y: 0 })(union(poly, union(cross, circles)))
+    )
+  )
+)
 
 const canvas = document.querySelector('canvas') as HTMLCanvasElement
 
