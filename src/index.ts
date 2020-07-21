@@ -2,27 +2,42 @@ import { drawSDF } from './draw'
 import {
   box,
   circle,
+  polygon,
   union,
-  dilate,
-  outline,
   translate,
   rotate,
   scale,
   mirrorX,
   mirrorY,
+  dilate,
+  outline,
+  invert,
 } from './sdf'
 
 const TAU = Math.PI * 2
 
-const sdf1 = outline(15)(
+const cross = outline(15)(
   rotate(TAU / 8)(
     mirrorY(mirrorX(scale(2)(translate({ x: 100, y: 100 })(circle(50)))))
   )
 )
-const sdf2 = rotate(TAU / 8)(
+const circles = rotate(TAU / 8)(
   dilate(5)(union(box({ x: 300, y: 20 }), box({ x: 20, y: 300 })))
 )
-const sdf = union(sdf1, sdf2)
+const poly = invert(
+  rotate(TAU / 8)(
+    dilate(400)(
+      polygon([
+        { x: -100, y: -100 },
+        { x: 100, y: -100 },
+        { x: 100, y: 100 },
+        { x: -100, y: 100 },
+      ])
+    )
+  )
+)
+
+const sdf = union(poly, union(cross, circles))
 
 const canvas = document.querySelector('canvas') as HTMLCanvasElement
 

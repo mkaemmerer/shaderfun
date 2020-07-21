@@ -1,4 +1,4 @@
-import { V2, S, length, minus, times, dot } from './utils/vector'
+import { V2, S, length, minus, times, dot, plus } from './utils/vector'
 
 export type SDF = (p: V2) => S
 
@@ -7,12 +7,23 @@ const min = Math.min
 const cos = Math.cos
 const sin = Math.sin
 const abs = Math.abs
+const sqrt = Math.sqrt
 
 const abs2 = (v: V2): V2 => ({ x: Math.abs(v.x), y: Math.abs(v.y) })
 const saturate = (s: S): S => max(min(s, 1), 0)
 
+const segments = <T>(arr: T[]): [T, T][] =>
+  arr.map((x, i) => [i == 0 ? arr[arr.length - 1] : arr[i - 1], x])
+
+const projectSegment = (a: V2, b: V2) => (p: V2) => {
+  const pa = minus(p, a)
+  const ba = minus(b, a)
+  const fac = saturate(dot(pa, ba) / dot(ba, ba))
+  return plus(a, times(fac, ba))
+}
+
 // Geometry
-export const point = (p: V2) => length(p)
+export const point: SDF = (p: V2) => length(p)
 
 export const circle = (r: S): SDF => (p: V2) => length(p) - r
 
@@ -22,11 +33,29 @@ export const box = (corner: V2): SDF => (p: V2) => {
   return length(c) + min(max(d.x, d.y), 0)
 }
 
-export const segment = (a: V2, b: V2) => (p: V2) => {
-  const pa = minus(p, a)
-  const ba = minus(b, a)
-  const h = saturate(dot(pa, ba) / dot(ba, ba))
-  return length(minus(pa, times(h, ba)))
+export const segment = (a: V2, b: V2): SDF => (p: V2) => {
+  const c = projectSegment(a, b)(p)
+  return length(minus(p, c))
+}
+
+export const polygon = (v: V2[]) => (p: V2) => {
+  const pv = minus(p, v[0])
+  let d = dot(pv, pv)
+
+  let sign = 1
+  for (const [a, b] of segments(v)) {
+    const e = minus(a, b)
+    const w = minus(p, b)
+    const c = minus(p, projectSegment(a, b)(p))
+    d = min(d, dot(c, c))
+
+    // Flip sign if we crossed an edge
+    const conditions = [p.y >= b.y, p.y < a.y, e.x * w.y > e.y * w.x]
+    if (conditions.every((x) => x) || conditions.every((x) => !x)) {
+      sign *= -1
+    }
+  }
+  return sign * sqrt(d)
 }
 
 // Operators
