@@ -1,4 +1,4 @@
-import { SDF, circle, box, dilate } from './shader/lang'
+import { SDF, circle, box, dilate } from './shader/sdf'
 import { drawShader } from './shader/draw'
 import { compileSDF } from './shader/compile'
 

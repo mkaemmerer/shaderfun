@@ -1,5 +1,5 @@
-import { SDF } from './lang'
-import { emptyState } from './shader-context'
+import { SDF } from './sdf'
+import { run } from './shader-context'
 import { Expr, print, normalize } from './ast'
 import { glInitProgram } from './gl'
 
@@ -13,8 +13,7 @@ const indentLines = (lines: string, indentLevel) =>
     .join('\n')
 
 const buildSDF = (sdf: SDF) => {
-  const [, runSDF] = sdf.run(emptyState)
-  const result = runSDF(Expr.Var('p'))
+  const result: Expr = run(sdf(Expr.Var('p')))
   const normalized = normalize(result)
   return print(normalized)
 }
