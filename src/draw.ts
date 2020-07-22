@@ -1,5 +1,5 @@
 import { SDF } from './sdf'
-import { ColorRGB, black, white, grayscale, mix } from './utils/color'
+import { ColorRGB, black, white, grayscale, mix } from './util/color'
 
 const bufferCanvas = document.createElement('canvas')
 const bufferCtx = bufferCanvas.getContext('2d')

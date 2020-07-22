@@ -1,4 +1,4 @@
-import { V2, S, length, minus, times, dot, plus } from './utils/vector'
+import { V2, S, length, minus, times, dot, plus } from './util/vector'
 
 export type SDF = (p: V2) => S
 
