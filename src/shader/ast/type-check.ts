@@ -1,4 +1,4 @@
-import match from '../util/match'
+import match from '../../util/match'
 import { Expr } from './ast'
 import { Type, literalType, unifyAll } from './types'
 import {
@@ -36,6 +36,8 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
           return checkExpr(Type.Number)(expr).map(() => Type.Number)
         case '!':
           return checkExpr(Type.Bool)(expr).map(() => Type.Bool)
+        case 'length':
+          return checkExpr(Type.Vec)(expr).map(() => Type.Number)
       }
     },
     'Expr.Binary': ({ exprLeft, op, exprRight }) => {
@@ -44,7 +46,6 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         // Polymorphic equality
         case '==': // fall-through
         case '!=':
-          // TODO: constrain exprs to be base types?
           return synthUnify(exprs.map(synthExpr)).map(() => Type.Bool)
         // Boolean
         case '&&': // fall-through
@@ -75,7 +76,16 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         .flatMap(() =>
           synthUnify([synthExpr(thenBranch), synthExpr(elseBranch)])
         ),
-    'Expr.Bind': () => ({} as TypeChecker<Type>), // TODO
+    'Expr.Vec': ({ x, y }) =>
+      sequenceM([checkExpr(Type.Number)(x), checkExpr(Type.Number)(y)]).map(
+        () => Type.Vec
+      ),
+    'Expr.Bind': ({ variable, type, value, body }) =>
+      scoped(
+        checkExpr(type)(value)
+          .flatMap((variableType) => defineVar(variable, variableType))
+          .flatMap(() => synthExpr(body))
+      ),
   })
 
 //-----------------------------------------------------------------------------
@@ -93,6 +103,7 @@ const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
       'Expr.Lit':    () => checkExprInner(type)(expr), // prettier-ignore
       'Expr.Unary':  () => checkExprInner(type)(expr), // prettier-ignore
       'Expr.Binary': () => checkExprInner(type)(expr), // prettier-ignore
+      'Expr.Vec':    () => checkExprInner(type)(expr), // prettier-ignore
       // Pass expectation forward to inner expression
       'Expr.Paren': ({ expr: exprBody }) => checkExpr(type)(exprBody),
       // Pass expectation forward through branches
@@ -106,9 +117,9 @@ const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
             ])
           ),
       // Set variable in context...
-      'Expr.Bind': ({ variable, value, body }) =>
+      'Expr.Bind': ({ variable, type: varType, value, body }) =>
         scoped(
-          synthExpr(value)
+          checkExpr(varType)(value)
             .flatMap((variableType) => defineVar(variable, variableType))
             .flatMap(() => checkExprInner(type)(body))
         ),
@@ -116,7 +127,7 @@ const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
   )
 
 const checkProg = (expr: Expr): TypeChecker<Expr> =>
-  checkExpr(Type.Any)(expr).map(() => expr)
+  checkExpr(Type.Number)(expr).map(() => expr)
 
 export const typeCheck = (expr: Expr): Expr =>
   checkProg(expr)

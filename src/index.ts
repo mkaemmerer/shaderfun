@@ -1,61 +1,13 @@
-import { drawSDF } from './draw'
-import {
-  box,
-  circle,
-  polygon,
-  union,
-  translate,
-  rotate,
-  scale,
-  mirrorX,
-  mirrorY,
-  repeatPolar,
-  repeatLogPolar,
-  dilate,
-  outline,
-  invert,
-} from './sdf'
+import { SDF, point, box, circle } from './shader/lang'
+import { emptyState } from './shader/shader-context'
+import { Expr, print } from './shader/ast'
 
-const TAU = Math.PI * 2
-
-const cross = outline(15)(
-  rotate(TAU / 8)(
-    mirrorY(mirrorX(scale(2)(translate({ x: 100, y: 100 })(circle(50)))))
-  )
-)
-const circles = rotate(TAU / 8)(
-  dilate(5)(union(box({ x: 300, y: 20 }), box({ x: 20, y: 300 })))
-)
-const poly = invert(
-  rotate(TAU / 8)(
-    dilate(400)(
-      polygon([
-        { x: -100, y: -100 },
-        { x: 100, y: -100 },
-        { x: 100, y: 100 },
-        { x: -100, y: 100 },
-      ])
-    )
-  )
-)
-
-const pattern = rotate(TAU / 20)(
-  scale(0.35)(
-    repeatPolar(5)(
-      translate({ x: 800, y: 0 })(union(poly, union(cross, circles)))
-    )
-  )
-)
-
-const sdf = repeatLogPolar(12)(scale(0.001)(pattern))
-
-const canvas = document.querySelector('canvas') as HTMLCanvasElement
-
-const draw = () => {
-  canvas.width = canvas.clientWidth * devicePixelRatio
-  canvas.height = canvas.clientHeight * devicePixelRatio
-  drawSDF(sdf)(canvas)
+const buildSDF = (sdf: SDF) => {
+  const [, runSDF] = sdf.run(emptyState)
+  const result = runSDF(Expr.Var('p'))
+  return print(result)
 }
 
-window.addEventListener('resize', draw)
-draw()
+console.log(buildSDF(point))
+console.log(buildSDF(circle(10)))
+console.log(buildSDF(box({ x: 10, y: 10 })))

@@ -1,4 +1,4 @@
-import match from '../util/match'
+import match from '../../util/match'
 import { empty } from './location'
 import { readLocation, withKey, pure, ASTContext } from './ast-context'
 import { Expr } from './ast'
@@ -40,6 +40,18 @@ const tagExpr = (expr: Expr): ASTContext<Expr> =>
               pure(Expr.If({ condition, thenBranch, elseBranch }))
             )
           )
+        )
+      },
+      'Expr.Vec': ({ x, y }) => {
+        const xM = withKey('x', tagExpr(x))
+        const yM = withKey('y', tagExpr(y))
+        return xM.flatMap((x) => yM.flatMap((y) => pure(Expr.Vec({ x, y }))))
+      },
+      'Expr.Bind': ({ variable, value, body }) => {
+        const valueM = withKey('value', tagExpr(value))
+        const bodyM = withKey('body', tagExpr(body))
+        return valueM.flatMap((value) =>
+          bodyM.flatMap((body) => pure(Expr.Bind({ variable, value, body })))
         )
       },
     })

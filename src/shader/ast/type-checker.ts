@@ -1,5 +1,6 @@
 import { Type, unify } from './types'
-import { TryState } from '../monad/try-state'
+import { TryState } from '../../monad/try-state'
+import { bestMatches } from '../../util/edit-distance'
 import {
   TypeContext,
   defineVar as defineVarContext,
@@ -9,7 +10,6 @@ import {
   pushLocation as pushLocationContext,
   popLocation as popLocationContext,
 } from './type-context'
-import { bestMatches } from '../util/edit-distance'
 import { Loc } from './location'
 
 export type TypeChecker<T> = TryState<TypeContext, T>

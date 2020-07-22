@@ -1,4 +1,4 @@
-import { State } from '../monad/state'
+import { State } from '../../monad/state'
 import { Loc, down, up } from './location'
 
 export type ASTContext<T> = State<Loc, T>

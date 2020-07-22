@@ -1,4 +1,22 @@
 import { Loc } from './location'
+import { Type } from './types'
+
+export type UnaryOp = '-' | '!' | 'length' | 'abs' | 'projX' | 'projY'
+export type BinaryOp =
+  | '=='
+  | '!='
+  | '&&'
+  | '||'
+  | '+'
+  | '-'
+  | '*'
+  | '/'
+  | '<'
+  | '<='
+  | '>'
+  | '>='
+  | 'max'
+  | 'min'
 
 // Expressions
 export type Expr =
@@ -9,6 +27,7 @@ export type Expr =
   | ExprBinary
   | ExprParen
   | ExprIf
+  | ExprVec
   | ExprBind
 
 export interface ExprImport {
@@ -28,13 +47,13 @@ export interface ExprLit {
 }
 export interface ExprUnary {
   kind: 'Expr.Unary'
-  op: string
+  op: UnaryOp
   expr: Expr
   loc?: Loc
 }
 export interface ExprBinary {
   kind: 'Expr.Binary'
-  op: string
+  op: BinaryOp
   exprLeft: Expr
   exprRight: Expr
   loc?: Loc
@@ -51,9 +70,16 @@ export interface ExprIf {
   elseBranch: Expr
   loc?: Loc
 }
+export interface ExprVec {
+  kind: 'Expr.Vec'
+  x: Expr
+  y: Expr
+  loc?: Loc
+}
 export interface ExprBind {
   kind: 'Expr.Bind'
   variable: string
+  type: Type
   value: Expr
   body: Expr
   loc?: Loc
@@ -65,7 +91,7 @@ export interface ExprBind {
 
 // Expressions
 export const Expr = {
-  Var: (variable: string): Expr => ({ kind: 'Expr.Var', variable }),
+  Var: (variable): Expr => ({ kind: 'Expr.Var', variable }),
   Lit: (value: any): Expr => ({ kind: 'Expr.Lit', value }),
   Unary: ({ op, expr }): Expr => ({ kind: 'Expr.Unary', op, expr }),
   Binary: ({ op, exprLeft, exprRight }): Expr => ({
@@ -81,9 +107,15 @@ export const Expr = {
     thenBranch,
     elseBranch,
   }),
-  Bind: ({ variable, value, body }): Expr => ({
+  Vec: ({ x, y }): Expr => ({
+    kind: 'Expr.Vec',
+    x,
+    y,
+  }),
+  Bind: ({ variable, type, value, body }): Expr => ({
     kind: 'Expr.Bind',
     variable,
+    type,
     value,
     body,
   }),
