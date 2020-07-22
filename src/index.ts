@@ -1,13 +1,17 @@
-import { SDF, point, box, circle } from './shader/lang'
-import { emptyState } from './shader/shader-context'
-import { Expr, print } from './shader/ast'
+import { SDF, circle, box } from './shader/lang'
+import { drawShader } from './shader/draw'
+import { compileSDF } from './shader/compile'
 
-const buildSDF = (sdf: SDF) => {
-  const [, runSDF] = sdf.run(emptyState)
-  const result = runSDF(Expr.Var('p'))
-  return print(result)
+const sdf: SDF = circle(200)
+
+const canvas = document.querySelector('canvas') as HTMLCanvasElement
+const gl = canvas.getContext('webgl')
+const shader = compileSDF(sdf, gl)
+
+const draw = () => {
+  canvas.width = canvas.clientWidth * devicePixelRatio
+  canvas.height = canvas.clientHeight * devicePixelRatio
+  drawShader(gl, shader)
 }
-
-console.log(buildSDF(point))
-console.log(buildSDF(circle(10)))
-console.log(buildSDF(box({ x: 10, y: 10 })))
+window.addEventListener('resize', draw)
+draw()

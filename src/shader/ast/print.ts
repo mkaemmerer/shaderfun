@@ -2,13 +2,18 @@ import match from '../../util/match'
 import { layout, str, seq, newline, Doc } from '../../data/doc'
 import { Expr, UnaryOp, BinaryOp } from './ast'
 
+const litToString = (x: any) => {
+  if (Number.isInteger(x)) return x.toFixed(1)
+  return x
+}
+
 const parens = (doc) => seq(str('('), doc, str(')'))
 
 // Expressions
 const printExpr = (expr: Expr): Doc<string> =>
   match(expr, {
     'Expr.Var': ({ variable }) => str(variable),
-    'Expr.Lit': ({ value }) => str(`${value}`),
+    'Expr.Lit': ({ value }) => str(`${litToString(value)}`),
     'Expr.Unary': ({ op, expr }) => printUnaryExpr(op, printExpr(expr)),
     'Expr.Binary': ({ exprLeft, op, exprRight }) =>
       printBinaryExpr(op, printExpr(exprLeft), printExpr(exprRight)),
