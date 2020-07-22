@@ -10,10 +10,12 @@ const sin = Math.sin
 const atan = Math.atan2
 const abs = Math.abs
 const sqrt = Math.sqrt
+const log = Math.log
 const mod = (x: number, b: number) => ((x % b) + b) % b
 
 const abs2 = (v: V2): V2 => ({ x: Math.abs(v.x), y: Math.abs(v.y) })
-const saturate = (s: S): S => max(min(s, 1), 0)
+const clamp = (lo: S, hi: S) => (s: S) => max(min(s, hi), lo)
+const saturate = clamp(0, 1)
 
 const segments = <T>(arr: T[]): [T, T][] =>
   arr.map((x, i) => [i == 0 ? arr[arr.length - 1] : arr[i - 1], x])
@@ -120,6 +122,24 @@ export const repeatPolar = (count: S): SDFTransform =>
     const theta = mod(a, angle) - halfAngle
     return times(r, { x: cos(theta), y: sin(theta) })
   })
+
+// Domain repetition extras
+export const repeatLogPolar = (count: S): SDFTransform => (sdf) => (p) => {
+  const r = length(p)
+  // Apply the forward log-polar map
+  const pos = {
+    x: log(max(0.00001, length(p))),
+    y: atan(p.y, p.x),
+  }
+  // Scale everything so tiles will fit nicely in the ]-pi,pi] interval
+  const scale = count / TAU
+  const scaled = times(scale, pos)
+  const repeated = {
+    x: mod(scaled.x + 0.5, 1) - 0.5,
+    y: mod(scaled.y + 0.5, 1) - 0.5,
+  }
+  return (sdf(repeated) * r) / scale
+}
 
 // Morphology
 export const dilate = (fac: S) => overRange((r: S) => r - fac)
