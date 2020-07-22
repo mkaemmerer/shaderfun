@@ -1,12 +1,22 @@
 import { SDF } from './lang'
 import { emptyState } from './shader-context'
-import { Expr, print } from './ast'
+import { Expr, print, normalize } from './ast'
 import { glInitProgram } from './gl'
+
+const indent = (line: string, indentLevel: number) =>
+  `${' '.repeat(indentLevel)}${line}`
+
+const indentLines = (lines: string, indentLevel) =>
+  lines
+    .split('\n')
+    .map((line) => indent(line, indentLevel))
+    .join('\n')
 
 const buildSDF = (sdf: SDF) => {
   const [, runSDF] = sdf.run(emptyState)
   const result = runSDF(Expr.Var('p'))
-  return print(result)
+  const normalized = normalize(result)
+  return print(normalized)
 }
 
 export const compileSDF = (sdf: SDF, gl: WebGLRenderingContext) => {
@@ -24,7 +34,7 @@ export const compileSDF = (sdf: SDF, gl: WebGLRenderingContext) => {
     uniform float width, height;
     
     float distanceEstimate(vec2 p) {
-      return ${source};
+      ${indentLines(source, 6).trim()}
     }
     
     vec3 getColor(vec2 p) {      
