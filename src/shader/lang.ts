@@ -7,9 +7,10 @@ export const lit = (val: any): Expr => Expr.Lit(val)
 
 export const vec = ({ x, y }): Expr => Expr.Vec({ x, y })
 
-export const length = (expr: Expr): Expr => Expr.Unary({ op: 'length', expr })
-
+// Scalar
 export const abs = (expr: Expr): Expr => Expr.Unary({ op: 'abs', expr })
+
+export const negate = (expr: Expr): Expr => Expr.Unary({ op: '-', expr })
 
 export const plus = (exprLeft: Expr, exprRight: Expr): Expr =>
   Expr.Binary({ exprLeft, op: '+', exprRight })
@@ -23,6 +24,15 @@ export const max = (exprLeft: Expr, exprRight: Expr): Expr =>
 export const min = (exprLeft: Expr, exprRight: Expr): Expr =>
   Expr.Binary({ exprLeft, op: 'min', exprRight })
 
+// Vector
+export const length = (expr: Expr): Expr => Expr.Unary({ op: 'length', expr })
+
 export const projX = (expr: Expr): Expr => Expr.Unary({ op: 'projX', expr })
 
 export const projY = (expr: Expr): Expr => Expr.Unary({ op: 'projY', expr })
+
+export const plusV = (exprLeft: Expr, exprRight: Expr): Expr =>
+  Expr.Binary({ exprLeft, op: '<+>', exprRight })
+
+export const minusV = (exprLeft: Expr, exprRight: Expr): Expr =>
+  Expr.Binary({ exprLeft, op: '<->', exprRight })

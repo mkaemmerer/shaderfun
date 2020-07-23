@@ -121,6 +121,11 @@ const printBinaryExpr = (
     case '>': // fall-through
     case '>=':
       return seq(exprLeft, str(' '), str(op), str(' '), exprRight)
+    // Vector Infix
+    case '<+>':
+      return seq(exprLeft, str(' '), str('+'), str(' '), exprRight)
+    case '<->':
+      return seq(exprLeft, str(' '), str('-'), str(' '), exprRight)
     // Prefix
     case 'max': // fall-through
     case 'min':

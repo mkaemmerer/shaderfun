@@ -40,6 +40,7 @@ const liftDecl = (expr: Expr) => (k: KSingle): Expr =>
       Expr.Bind({ variable, type, value, body: liftDecl(body)(k) }),
   })
 
+// TODO: automatically parenthesize expressions
 const id = (x) => x
 const normalizeExpr = (expr: Expr): Expr => liftDecl(expr)(id)
 

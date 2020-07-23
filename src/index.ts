@@ -1,8 +1,18 @@
-import { SDF, circle, box, dilate } from './shader/sdf'
+import {
+  SDF,
+  circle,
+  box,
+  dilate,
+  outline,
+  translate,
+  invert,
+} from './shader/sdf'
 import { drawShader } from './shader/draw'
 import { compileSDF } from './shader/compile'
 
-const sdf: SDF = dilate(20)(box({ x: 100, y: 100 })) //circle(200)
+const sdf: SDF = invert(
+  translate({ x: 400, y: 0 })(outline(10)(dilate(20)(box({ x: 100, y: 100 }))))
+)
 
 const canvas = document.querySelector('canvas') as HTMLCanvasElement
 const gl = canvas.getContext('webgl')
