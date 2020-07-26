@@ -29,7 +29,7 @@ const darkGray = grayscale(40)
 const midGray = grayscale(60)
 const lightGray = grayscale(240)
 
-const eps = 5
+const eps = 2
 const stripeWidth = 10
 const colorRamp = (dist: number): ColorRGB => {
   if (Math.abs(dist) < eps) {
