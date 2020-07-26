@@ -1,5 +1,5 @@
-import { SDF } from './sdf'
-import { ColorRGB, black, white, grayscale, mix } from './util/color'
+import { SDF } from '../sdf'
+import { ColorRGB, black, white, grayscale, mix } from '../util/color'
 
 const bufferCanvas = document.createElement('canvas')
 const bufferCtx = bufferCanvas.getContext('2d')
@@ -20,7 +20,7 @@ const makeImage = (width: number, height: number, f) => {
   }
   return image
 }
-const drawImage = (ctx, image) => {
+const drawImage = (ctx: CanvasRenderingContext2D, image: ImageData) => {
   bufferCtx.putImageData(image, 0, 0)
   ctx.drawImage(bufferCanvas, 0, 0)
 }
@@ -46,9 +46,8 @@ const colorRamp = (dist: number): ColorRGB => {
   }
 }
 
-export const drawSDF = (sdf: SDF) => (canvas: HTMLCanvasElement) => {
-  const { width, height } = canvas
-  const ctx = canvas.getContext('2d')
+export const drawSDF = (sdf: SDF) => (ctx: CanvasRenderingContext2D) => {
+  const { width, height } = ctx.canvas
 
   const image = makeImage(width, height, ({ x, y }) => {
     const dist = sdf({ x: x - width / 2, y: y - height / 2 })

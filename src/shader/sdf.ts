@@ -42,11 +42,11 @@ export type SDFTransform = (sdf: SDF) => SDF
 
 // Utils
 const cast = (v: V2): Expr => vec({ x: lit(v.x), y: lit(v.y) })
-const id = (x: any) => x
+const id = <T>(x: T): T => x
 const compose2 = <A, B, C>(f: (b: B) => C, g: (a: A) => B) => (x: A) => f(g(x))
 
-const conj = (...conds) => conds.reduce(and)
-const disj = (...conds) => conds.reduce(or)
+const conj = (...conds: Expr[]) => conds.reduce(and)
+const disj = (...conds: Expr[]) => conds.reduce(or)
 
 const segments = <T>(arr: T[]): [T, T][] =>
   arr.map((x, i) => [i == 0 ? arr[arr.length - 1] : arr[i - 1], x])

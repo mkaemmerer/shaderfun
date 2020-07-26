@@ -6,7 +6,7 @@ type Var = string
 type K = (expr: Expr) => Expr
 type ShaderState = { count: number; cont: K }
 
-const id = (x) => x
+const id = <T>(x: T): T => x
 export const emptyState = { count: 0, cont: id }
 
 export type ShaderContext<T> = State<ShaderState, T>

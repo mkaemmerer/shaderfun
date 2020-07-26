@@ -5,7 +5,7 @@ type ShaderType =
 //
 // Initialize a shader program, so WebGL knows how to draw our data
 //
-export const glInitProgram = (
+export const glInitShader = (
   gl: WebGLRenderingContext,
   { vertexShaderSource, fragmentShaderSource }
 ): WebGLProgram => {

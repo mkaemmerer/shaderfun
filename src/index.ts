@@ -14,9 +14,8 @@ import {
   repeatPolar,
   repeatLogPolar,
   invert,
-} from './shader/sdf'
-import { drawShader } from './shader/draw'
-import { compileSDF } from './shader/compile'
+  drawSDF,
+} from './shader'
 
 const TAU = Math.PI * 2
 
@@ -53,12 +52,11 @@ const sdf: SDF = repeatLogPolar(12)(scale(0.001)(pattern))
 
 const canvas = document.querySelector('canvas') as HTMLCanvasElement
 const gl = canvas.getContext('webgl')
-const shader = compileSDF(sdf, gl)
 
 const draw = () => {
   canvas.width = canvas.clientWidth * devicePixelRatio
   canvas.height = canvas.clientHeight * devicePixelRatio
-  drawShader(gl, shader)
+  drawSDF(sdf)(gl)
 }
 window.addEventListener('resize', draw)
 draw()

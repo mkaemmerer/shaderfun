@@ -47,11 +47,13 @@ const tagExpr = (expr: Expr): ASTContext<Expr> =>
         const yM = withKey('y', tagExpr(y))
         return xM.flatMap((x) => yM.flatMap((y) => pure(Expr.Vec({ x, y }))))
       },
-      'Expr.Bind': ({ variable, value, body }) => {
+      'Expr.Bind': ({ variable, type, value, body }) => {
         const valueM = withKey('value', tagExpr(value))
         const bodyM = withKey('body', tagExpr(body))
         return valueM.flatMap((value) =>
-          bodyM.flatMap((body) => pure(Expr.Bind({ variable, value, body })))
+          bodyM.flatMap((body) =>
+            pure(Expr.Bind({ variable, type, value, body }))
+          )
         )
       },
     })

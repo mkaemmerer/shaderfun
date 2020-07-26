@@ -1,26 +1,15 @@
-import { SDF } from './sdf'
-import { run } from './shader-context'
-import { Expr, print, normalize } from './ast'
-import { glInitProgram } from './gl'
+import { glInitShader } from './init'
 
 const indent = (line: string, indentLevel: number) =>
   `${' '.repeat(indentLevel)}${line}`
 
-const indentLines = (lines: string, indentLevel) =>
+const indentLines = (lines: string, indentLevel: number) =>
   lines
     .split('\n')
     .map((line) => indent(line, indentLevel))
     .join('\n')
 
-const buildSDF = (sdf: SDF) => {
-  const result: Expr = run(sdf(Expr.Var('p')))
-  const normalized = normalize(result)
-  return print(normalized)
-}
-
-export const compileSDF = (sdf: SDF, gl: WebGLRenderingContext) => {
-  const source = buildSDF(sdf)
-
+export const compileShader = (source: string, gl: WebGLRenderingContext) => {
   const vertexShaderSource = `
     precision mediump float;
     attribute vec2 position;
@@ -52,7 +41,6 @@ export const compileSDF = (sdf: SDF, gl: WebGLRenderingContext) => {
       gl_FragColor = vec4(res.rgb, 1.);
     }
   `
-  console.log(fragmentShaderSource)
 
-  return glInitProgram(gl, { vertexShaderSource, fragmentShaderSource })
+  return glInitShader(gl, { vertexShaderSource, fragmentShaderSource })
 }
