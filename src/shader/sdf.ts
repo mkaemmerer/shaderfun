@@ -1,6 +1,6 @@
 import { V2, S } from '../util/vector'
 import { Expr } from './ast'
-import { ShaderContext, pure, decl } from './shader-context'
+import { ShaderContext, pure, decl, sequenceM } from './shader-context'
 import { Type } from './ast/types'
 import {
   lit,
@@ -9,12 +9,18 @@ import {
   abs,
   plus,
   minus,
+  times,
+  mod,
+  plusV,
   minusV,
+  timesV,
   max,
   min,
   negate,
   projX,
   projY,
+  sin,
+  cos,
 } from './lang'
 
 const cast = (v: V2): Expr => vec({ x: lit(v.x), y: lit(v.y) })
@@ -51,6 +57,55 @@ export const box = (corner: V2): SDF => (p) => {
 // Rigidbody
 export const translate = (v: V2): SDFTransform =>
   overDomain((p) => pure(minusV(p, cast(v))))
+
+export const rotate = (angle: S): SDFTransform =>
+  overDomain((p) =>
+    sequenceM([
+      decl(Type.Number, cos(lit(angle))),
+      decl(Type.Number, sin(lit(angle))),
+    ]).flatMap(([cosa, sina]) => {
+      const px = projX(p)
+      const py = projY(p)
+      return pure(
+        vec({
+          x: minus(times(px, cosa), times(py, sina)),
+          y: plus(times(px, sina), times(py, cosa)),
+        })
+      )
+    })
+  )
+
+export const scale = (s: S): SDFTransform => (sdf) => (p) =>
+  sdf(timesV(lit(1 / s), p)).map((p) => times(p, lit(s)))
+
+// Domain repetition
+export const mirrorX = overDomain((p) =>
+  pure(vec({ x: abs(projX(p)), y: projY(p) }))
+)
+
+export const mirrorY = overDomain((p) =>
+  pure(vec({ x: projX(p), y: projY(p) }))
+)
+
+export const repeatX = (cellSize: S) =>
+  overDomain((p) =>
+    decl(Type.Number, times(lit(cellSize), lit(0.5))).map((halfCell) =>
+      vec({
+        x: minus(mod(plus(projX(p), halfCell), lit(cellSize)), halfCell),
+        y: projY(p),
+      })
+    )
+  )
+
+export const repeatY = (cellSize: S) =>
+  overDomain((p) =>
+    decl(Type.Number, times(lit(cellSize), lit(0.5))).map((halfCell) =>
+      vec({
+        x: projX(p),
+        y: minus(mod(plus(projY(p), halfCell), lit(cellSize)), halfCell),
+      })
+    )
+  )
 
 // Morphology
 export const dilate = (fac: S) => (sdf: SDF): SDF => (p: Expr) =>

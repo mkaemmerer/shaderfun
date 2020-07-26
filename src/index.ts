@@ -5,13 +5,21 @@ import {
   dilate,
   outline,
   translate,
+  rotate,
+  scale,
   invert,
 } from './shader/sdf'
 import { drawShader } from './shader/draw'
 import { compileSDF } from './shader/compile'
 
-const sdf: SDF = invert(
-  translate({ x: 400, y: 0 })(outline(10)(dilate(20)(box({ x: 100, y: 100 }))))
+const sdf: SDF = scale(2)(
+  rotate(Math.PI / 4)(
+    invert(
+      translate({ x: 400, y: 0 })(
+        outline(10)(dilate(20)(box({ x: 100, y: 100 })))
+      )
+    )
+  )
 )
 
 const canvas = document.querySelector('canvas') as HTMLCanvasElement

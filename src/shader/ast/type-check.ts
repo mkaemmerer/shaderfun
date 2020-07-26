@@ -35,6 +35,8 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         // Scalar -> Scalar
         case '-': //fall-through
         case 'abs':
+        case 'sin':
+        case 'cos':
           return checkExpr(Type.Number)(expr).map(() => Type.Number)
         // Vector -> Scalar
         case 'projX': //fall-through
@@ -47,36 +49,41 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
       }
     },
     'Expr.Binary': ({ exprLeft, op, exprRight }) => {
-      const exprs = [exprLeft, exprRight]
+      const checkBinary = (typeLeft: Type, typeRight: Type, typeResult: Type) =>
+        sequenceM([
+          checkExpr(typeLeft)(exprLeft),
+          checkExpr(typeRight)(exprRight),
+        ]).map(() => typeResult)
       switch (op) {
         // Polymorphic equality
         case '==': // fall-through
         case '!=':
-          return synthUnify(exprs.map(synthExpr)).map(() => Type.Bool)
+          return synthUnify([exprLeft, exprRight].map(synthExpr)).map(
+            () => Type.Bool
+          )
         // Bool -> Bool -> Bool
         case '&&': // fall-through
         case '||':
-          return sequenceM(exprs.map(checkExpr(Type.Bool))).map(() => Type.Bool)
+          return checkBinary(Type.Bool, Type.Bool, Type.Bool)
         // Scalar -> Scalar -> Scalar
         case '+': // fall-through
         case '-': // fall-through
         case '*': // fall-through
         case '/':
-          return sequenceM(exprs.map(checkExpr(Type.Number))).map(
-            () => Type.Number
-          )
+          return checkBinary(Type.Number, Type.Number, Type.Number)
         // Vector -> Vector -> Vector
         case '<+>': // fall-through
         case '<->': // fall-through
-          return sequenceM(exprs.map(checkExpr(Type.Vec))).map(() => Type.Vec)
+          return checkBinary(Type.Vec, Type.Vec, Type.Vec)
+        // Scalar -> Vector -> Vector
+        case '*>':
+          return checkBinary(Type.Number, Type.Vec, Type.Vec)
         // Scalar -> Scalar -> Bool
         case '<': // fall-through
         case '<=': // fall-through
         case '>': // fall-through
         case '>=':
-          return sequenceM(exprs.map(checkExpr(Type.Number))).map(
-            () => Type.Bool
-          )
+          return checkBinary(Type.Number, Type.Number, Type.Bool)
       }
     },
     'Expr.Paren': ({ expr }) => synthExpr(expr),

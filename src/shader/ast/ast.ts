@@ -1,24 +1,38 @@
 import { Loc } from './location'
 import { Type } from './types'
 
-export type UnaryOp = '-' | '!' | 'length' | 'abs' | 'projX' | 'projY'
+export type UnaryOp =
+  | '-'
+  | '!'
+  | 'length'
+  | 'abs'
+  | 'sin'
+  | 'cos'
+  | 'projX'
+  | 'projY'
 export type BinaryOp =
   | '=='
   | '!='
   | '&&'
   | '||'
+  // scalar -> scalar -> scalar
   | '+'
   | '-'
   | '*'
   | '/'
-  | '<+>'
-  | '<->'
+  | 'max'
+  | 'min'
+  | 'mod'
+  // scalar -> scalar -> bool
   | '<'
   | '<='
   | '>'
   | '>='
-  | 'max'
-  | 'min'
+  // vector -> vector -> vector
+  | '<+>'
+  | '<->'
+  // scalar -> vector -> vector
+  | '*>'
 
 // Expressions
 export type Expr =

@@ -91,6 +91,8 @@ const printUnaryExpr = (op: UnaryOp, exprDoc: Doc<string>): Doc<string> => {
       return seq(str(op), exprDoc)
     // Prefix Function calls
     case 'abs': // fall-through
+    case 'sin': // fall-through
+    case 'cos': // fall-through
     case 'length':
       return seq(str(op), parens(exprDoc))
     // Postfix
@@ -122,11 +124,14 @@ const printBinaryExpr = (
     case '>=':
       return seq(exprLeft, str(' '), str(op), str(' '), exprRight)
     // Vector Infix
+    case '*>':
+      return seq(exprLeft, str(' '), str('*'), str(' '), exprRight)
     case '<+>':
       return seq(exprLeft, str(' '), str('+'), str(' '), exprRight)
     case '<->':
       return seq(exprLeft, str(' '), str('-'), str(' '), exprRight)
     // Prefix
+    case 'mod': // fall-through
     case 'max': // fall-through
     case 'min':
       return seq(str(op), parens(seq(exprLeft, str(','), str(' '), exprRight)))
