@@ -18,12 +18,12 @@ import {
 
 const TAU = Math.PI * 2
 
-const cross = outline(15)(
+const circles = outline(15)(
   rotate(TAU / 8)(
     mirrorY(mirrorX(scale(2)(translate({ x: 100, y: 100 })(circle(50)))))
   )
 )
-const circles = rotate(TAU / 8)(
+const cross = rotate(TAU / 8)(
   dilate(5)(union(box({ x: 300, y: 20 }), box({ x: 20, y: 300 })))
 )
 const poly = invert(

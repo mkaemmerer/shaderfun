@@ -28,7 +28,7 @@ const newVar = (): ShaderContext<Var> =>
     State.set({ count: count + 1, cont }).map(() => `var_${count}`)
   )
 
-export const decl = (type: Type, expr: Expr): ShaderContext<Expr> =>
+export const decl = (type: Type) => (expr: Expr): ShaderContext<Expr> =>
   newVar().flatMap((v) =>
     State.get<ShaderState>()
       .flatMap(({ count, cont }) => {
