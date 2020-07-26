@@ -15,7 +15,7 @@ const printType = (type: Type) =>
   match(type, {
     'Type.Bool': () => str('bool'),
     'Type.Vec': () => str('vec2'),
-    'Type.Number': () => str('float'),
+    'Type.Scalar': () => str('float'),
   })
 
 // Expressions

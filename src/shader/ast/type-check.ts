@@ -40,12 +40,12 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         case 'log': // fall-through
         case 'saturate': // fall-through
         case 'sqrt':
-          return checkExpr(Type.Number)(expr).map(() => Type.Number)
+          return checkExpr(Type.Scalar)(expr).map(() => Type.Scalar)
         // Vector -> Scalar
         case 'projX': // fall-through
         case 'projY': // fall-through
         case 'length':
-          return checkExpr(Type.Vec)(expr).map(() => Type.Number)
+          return checkExpr(Type.Vec)(expr).map(() => Type.Scalar)
         // Bool -> Bool
         case '!':
           return checkExpr(Type.Bool)(expr).map(() => Type.Bool)
@@ -77,23 +77,23 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         case 'min': // fall-through
         case 'mod': // fall-through
         case 'atan':
-          return checkBinary(Type.Number, Type.Number, Type.Number)
+          return checkBinary(Type.Scalar, Type.Scalar, Type.Scalar)
         // Vector -> Vector -> Vector
         case '<+>': // fall-through
         case '<->': // fall-through
           return checkBinary(Type.Vec, Type.Vec, Type.Vec)
         // Scalar -> Vector -> Vector
         case '*>':
-          return checkBinary(Type.Number, Type.Vec, Type.Vec)
+          return checkBinary(Type.Scalar, Type.Vec, Type.Vec)
         // Vector -> Vector -> Scalar
         case 'dot':
-          return checkBinary(Type.Vec, Type.Vec, Type.Number)
+          return checkBinary(Type.Vec, Type.Vec, Type.Scalar)
         // Scalar -> Scalar -> Bool
         case '<': // fall-through
         case '<=': // fall-through
         case '>': // fall-through
         case '>=':
-          return checkBinary(Type.Number, Type.Number, Type.Bool)
+          return checkBinary(Type.Scalar, Type.Scalar, Type.Bool)
       }
     },
     'Expr.Paren': ({ expr }) => synthExpr(expr),
@@ -104,7 +104,7 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
           synthUnify([synthExpr(thenBranch), synthExpr(elseBranch)])
         ),
     'Expr.Vec': ({ x, y }) =>
-      sequenceM([checkExpr(Type.Number)(x), checkExpr(Type.Number)(y)]).map(
+      sequenceM([checkExpr(Type.Scalar)(x), checkExpr(Type.Scalar)(y)]).map(
         () => Type.Vec
       ),
     'Expr.Bind': ({ variable, type, value, body }) =>
@@ -154,7 +154,7 @@ const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
   )
 
 const checkProg = (expr: Expr): TypeChecker<Expr> =>
-  checkExpr(Type.Number)(expr).map(() => expr)
+  checkExpr(Type.Scalar)(expr).map(() => expr)
 
 export const typeCheck = (expr: Expr): Expr =>
   checkProg(expr)

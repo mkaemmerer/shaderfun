@@ -55,7 +55,7 @@ const projectSegment = (a: Expr, b: Expr) => (p: Expr) =>
   Do(function* () {
     const pa = yield decl(Type.Vec)(minus(p, a))
     const ba = yield decl(Type.Vec)(minus(b, a))
-    const fac = yield decl(Type.Number)(saturate(div(dot(pa, ba), dot(ba, ba))))
+    const fac = yield decl(Type.Scalar)(saturate(div(dot(pa, ba), dot(ba, ba))))
     return pure(plus(a, times(fac, ba)))
   })
 
@@ -65,7 +65,7 @@ const overDomain = (f: (p: Expr) => ShaderContext<Expr>): SDFTransform => (
 
 const overRange = (f: (s: Expr) => ShaderContext<Expr>): SDFTransform => (
   sdf: SDF
-) => (p) => sdf(p).flatMap(decl(Type.Number)).flatMap(f)
+) => (p) => sdf(p).flatMap(decl(Type.Scalar)).flatMap(f)
 
 // Geometry
 export const point: SDF = (p) => pure(length(p))
@@ -88,14 +88,14 @@ export const polygon = (v: V2[]): SDF => (p) =>
   Do(function* () {
     const pv = yield decl(Type.Vec)(minus(p, cast(v[0])))
 
-    let d = yield decl(Type.Number)(dot(pv, pv))
+    let d = yield decl(Type.Scalar)(dot(pv, pv))
     let sign = lit(1)
     for (const [a, b] of segments(v)) {
       const e = yield decl(Type.Vec)(minus(cast(a), cast(b)))
       const w = yield decl(Type.Vec)(minus(p, cast(b)))
       const projected = yield projectSegment(cast(a), cast(b))(p)
       const c = yield decl(Type.Vec)(minus(p, projected))
-      d = yield decl(Type.Number)(min(d, dot(c, c)))
+      d = yield decl(Type.Scalar)(min(d, dot(c, c)))
 
       // Flip sign if we crossed an edge
       const cond1 = yield decl(Type.Bool)(gteq(projY(p), lit(b.y)))
@@ -114,7 +114,7 @@ export const polygon = (v: V2[]): SDF => (p) =>
         thenBranch: lit(1),
         elseBranch: lit(-1),
       })
-      sign = yield decl(Type.Number)(times(sign, newSign))
+      sign = yield decl(Type.Scalar)(times(sign, newSign))
     }
     return pure(times(sign, sqrt(d)))
   })
@@ -123,20 +123,20 @@ export const polygon = (v: V2[]): SDF => (p) =>
 // NB: these break the distance field
 export const union = (s1: SDF, s2: SDF): SDF => (p) =>
   sequenceM([
-    s1(p).flatMap(decl(Type.Number)),
-    s2(p).flatMap(decl(Type.Number)),
+    s1(p).flatMap(decl(Type.Scalar)),
+    s2(p).flatMap(decl(Type.Scalar)),
   ]).map(([d1, d2]) => min(d1, d2))
 
 export const intersection = (s1: SDF, s2: SDF): SDF => (p) =>
   sequenceM([
-    s1(p).flatMap(decl(Type.Number)),
-    s2(p).flatMap(decl(Type.Number)),
+    s1(p).flatMap(decl(Type.Scalar)),
+    s2(p).flatMap(decl(Type.Scalar)),
   ]).map(([d1, d2]) => max(d1, d2))
 
 export const difference = (s1: SDF, s2: SDF): SDF => (p) =>
   sequenceM([
-    s1(p).flatMap(decl(Type.Number)),
-    s2(p).flatMap(decl(Type.Number)),
+    s1(p).flatMap(decl(Type.Scalar)),
+    s2(p).flatMap(decl(Type.Scalar)),
   ]).map(([d1, d2]) => max(d1, negate(d2)))
 
 // Rigidbody
@@ -146,8 +146,8 @@ export const translate = (v: V2): SDFTransform =>
 export const rotate = (angle: S): SDFTransform =>
   overDomain((p) =>
     Do(function* () {
-      const cosa = yield decl(Type.Number)(cos(lit(angle)))
-      const sina = yield decl(Type.Number)(sin(lit(angle)))
+      const cosa = yield decl(Type.Scalar)(cos(lit(angle)))
+      const sina = yield decl(Type.Scalar)(sin(lit(angle)))
       const px = projX(p)
       const py = projY(p)
       return pure(
@@ -175,7 +175,7 @@ export const mirrorY = overDomain((p) =>
 
 export const repeatX = (cellSize: S) =>
   overDomain((p) =>
-    decl(Type.Number)(times(lit(cellSize), lit(0.5))).map((halfCell) =>
+    decl(Type.Scalar)(times(lit(cellSize), lit(0.5))).map((halfCell) =>
       vec({
         x: minus(mod(plus(projX(p), halfCell), lit(cellSize)), halfCell),
         y: projY(p),
@@ -185,7 +185,7 @@ export const repeatX = (cellSize: S) =>
 
 export const repeatY = (cellSize: S) =>
   overDomain((p) =>
-    decl(Type.Number)(times(lit(cellSize), lit(0.5))).map((halfCell) =>
+    decl(Type.Scalar)(times(lit(cellSize), lit(0.5))).map((halfCell) =>
       vec({
         x: projX(p),
         y: minus(mod(plus(projY(p), halfCell), lit(cellSize)), halfCell),
@@ -201,11 +201,11 @@ export const repeatPolar = (count: S): SDFTransform =>
     Do(function* () {
       const angle = TAU / count
       const halfAngle = angle * 0.5
-      const a = yield decl(Type.Number)(
+      const a = yield decl(Type.Scalar)(
         plus(atan(projY(p), projX(p)), lit(halfAngle))
       )
-      const r = yield decl(Type.Number)(length(p))
-      const theta = yield decl(Type.Number)(
+      const r = yield decl(Type.Scalar)(length(p))
+      const theta = yield decl(Type.Scalar)(
         minus(mod(a, lit(angle)), lit(halfAngle))
       )
       return pure(timesV(r, vec({ x: cos(theta), y: sin(theta) })))
@@ -215,7 +215,7 @@ export const repeatPolar = (count: S): SDFTransform =>
 // // Domain repetition extras
 export const repeatLogPolar = (count: S): SDFTransform => (sdf) => (p) =>
   Do(function* () {
-    const r = yield decl(Type.Number)(length(p))
+    const r = yield decl(Type.Scalar)(length(p))
     // Apply the forward log-polar map
     const pos = yield decl(Type.Vec)(
       vec({

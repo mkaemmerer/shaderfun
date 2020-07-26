@@ -56,7 +56,7 @@ const top = Infinity
 const opPrecedence = (op) =>
   precedenceTable.findIndex((ops) => ops.includes(op))
 
-const fixPrecedence = (expr: Expr, prec: Number): Expr =>
+const fixPrecedence = (expr: Expr, prec: number): Expr =>
   match(expr, {
     'Expr.Var': () => expr,
     'Expr.Lit': () => expr,

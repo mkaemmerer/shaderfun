@@ -1,13 +1,13 @@
 import { Maybe } from '../../data/maybe'
 
-export type Type = TypeBool | TypeNumber | TypeVec
+export type Type = TypeBool | TypeScalar | TypeVec
 
 export interface TypeVec {
   kind: 'Type.Vec'
   toString: () => string
 }
-export interface TypeNumber {
-  kind: 'Type.Number'
+export interface TypeScalar {
+  kind: 'Type.Scalar'
   toString: () => string
 }
 export interface TypeBool {
@@ -22,10 +22,10 @@ export const Type = {
       return 'Vec'
     },
   } as Type,
-  Number: {
-    kind: 'Type.Number',
+  Scalar: {
+    kind: 'Type.Scalar',
     toString() {
-      return 'Number'
+      return 'Scalar'
     },
   } as Type,
   Bool: {
@@ -39,7 +39,7 @@ export const Type = {
 export const literalType = (lit: any): Type => {
   switch (typeof lit) {
     case 'number':
-      return Type.Number
+      return Type.Scalar
     case 'boolean':
       return Type.Bool
   }
