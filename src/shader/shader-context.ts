@@ -50,3 +50,22 @@ export const run = (ctx: ShaderContext<Expr>): Expr => {
   const [{ cont }, expr] = ctx.run(emptyState)
   return cont(expr)
 }
+
+const cached = (f) => {
+  let value = undefined
+  return (x) => {
+    if (value === undefined) {
+      value = f(x)
+    }
+    return value
+  }
+}
+
+export const Do = (gen): ShaderContext<any> => {
+  const g = gen()
+  const step = (data) => {
+    const { done, value } = g.next(data)
+    return done ? value : value.flatMap(cached(step))
+  }
+  return step(undefined)
+}

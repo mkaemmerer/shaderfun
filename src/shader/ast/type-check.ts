@@ -33,14 +33,17 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
     'Expr.Unary': ({ expr, op }) => {
       switch (op) {
         // Scalar -> Scalar
-        case '-': //fall-through
-        case 'abs':
-        case 'sin':
-        case 'cos':
+        case '-': // fall-through
+        case 'abs': // fall-through
+        case 'sin': // fall-through
+        case 'cos': // fall-through
+        case 'log': // fall-through
+        case 'saturate': // fall-through
+        case 'sqrt':
           return checkExpr(Type.Number)(expr).map(() => Type.Number)
         // Vector -> Scalar
-        case 'projX': //fall-through
-        case 'projY': //fall-through
+        case 'projX': // fall-through
+        case 'projY': // fall-through
         case 'length':
           return checkExpr(Type.Vec)(expr).map(() => Type.Number)
         // Bool -> Bool
@@ -69,7 +72,11 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         case '+': // fall-through
         case '-': // fall-through
         case '*': // fall-through
-        case '/':
+        case '/': // fall-through
+        case 'max': // fall-through
+        case 'min': // fall-through
+        case 'mod': // fall-through
+        case 'atan':
           return checkBinary(Type.Number, Type.Number, Type.Number)
         // Vector -> Vector -> Vector
         case '<+>': // fall-through
@@ -78,6 +85,9 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         // Scalar -> Vector -> Vector
         case '*>':
           return checkBinary(Type.Number, Type.Vec, Type.Vec)
+        // Vector -> Vector -> Scalar
+        case 'dot':
+          return checkBinary(Type.Vec, Type.Vec, Type.Number)
         // Scalar -> Scalar -> Bool
         case '<': // fall-through
         case '<=': // fall-through

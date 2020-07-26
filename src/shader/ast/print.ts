@@ -13,6 +13,7 @@ const parens = (doc: Doc<string>) => seq(str('('), doc, str(')'))
 // Types
 const printType = (type: Type) =>
   match(type, {
+    'Type.Bool': () => str('bool'),
     'Type.Vec': () => str('vec2'),
     'Type.Number': () => str('float'),
   })
@@ -56,8 +57,8 @@ const printExpr = (expr: Expr): Doc<string> =>
     'Expr.If': ({ condition, thenBranch, elseBranch }) =>
       seq(
         printExpr(condition),
-        seq(str(''), str('?'), str(' '), printExpr(thenBranch)),
-        seq(str(''), str(':'), str(' '), printExpr(elseBranch))
+        seq(str(' '), str('?'), str(' '), printExpr(thenBranch)),
+        seq(str(' '), str(':'), str(' '), printExpr(elseBranch))
       ),
     'Expr.Vec': ({ x, y }) =>
       seq(
@@ -93,7 +94,10 @@ const printUnaryExpr = (op: UnaryOp, exprDoc: Doc<string>): Doc<string> => {
     case 'abs': // fall-through
     case 'sin': // fall-through
     case 'cos': // fall-through
-    case 'length':
+    case 'log': // fall-through
+    case 'length': // fall-through
+    case 'sqrt': // fall-through
+    case 'saturate':
       return seq(str(op), parens(exprDoc))
     // Postfix
     case 'projX':
@@ -133,7 +137,9 @@ const printBinaryExpr = (
     // Prefix
     case 'mod': // fall-through
     case 'max': // fall-through
-    case 'min':
+    case 'min': // fall-through
+    case 'atan': // fall-through
+    case 'dot':
       return seq(str(op), parens(seq(exprLeft, str(','), str(' '), exprRight)))
   }
 }

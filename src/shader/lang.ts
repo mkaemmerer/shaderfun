@@ -1,4 +1,10 @@
-import { Expr } from './ast'
+import { Expr, UnaryOp, BinaryOp } from './ast'
+
+// Util
+const unary = (op: UnaryOp) => (expr: Expr): Expr => Expr.Unary({ op, expr })
+
+const binary = (op: BinaryOp) => (exprLeft: Expr, exprRight: Expr): Expr =>
+  Expr.Binary({ op, exprLeft, exprRight })
 
 // Language Primitives
 export const var$ = (name: string) => Expr.Var(name)
@@ -8,44 +14,41 @@ export const lit = (val: any): Expr => Expr.Lit(val)
 export const vec = ({ x, y }): Expr => Expr.Vec({ x, y })
 
 // Scalar
-export const abs = (expr: Expr): Expr => Expr.Unary({ op: 'abs', expr })
+export const abs = unary('abs')
+export const sin = unary('sin')
+export const cos = unary('cos')
+export const log = unary('log')
+export const negate = unary('-')
+export const sqrt = unary('sqrt')
+export const saturate = unary('saturate')
 
-export const sin = (expr: Expr): Expr => Expr.Unary({ op: 'sin', expr })
-
-export const cos = (expr: Expr): Expr => Expr.Unary({ op: 'cos', expr })
-
-export const negate = (expr: Expr): Expr => Expr.Unary({ op: '-', expr })
-
-export const plus = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: '+', exprRight })
-
-export const minus = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: '-', exprRight })
-
-export const times = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: '*', exprRight })
-
-export const max = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: 'max', exprRight })
-
-export const min = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: 'min', exprRight })
-
-export const mod = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: 'mod', exprRight })
+export const atan = binary('atan')
+export const plus = binary('+')
+export const minus = binary('-')
+export const times = binary('*')
+export const div = binary('/')
+export const max = binary('max')
+export const min = binary('min')
+export const mod = binary('mod')
 
 // Vector
-export const length = (expr: Expr): Expr => Expr.Unary({ op: 'length', expr })
+export const length = unary('length')
+export const projX = unary('projX')
+export const projY = unary('projY')
 
-export const projX = (expr: Expr): Expr => Expr.Unary({ op: 'projX', expr })
+export const plusV = binary('<+>')
+export const minusV = binary('<->')
+export const timesV = binary('*>')
+export const dot = binary('dot')
 
-export const projY = (expr: Expr): Expr => Expr.Unary({ op: 'projY', expr })
+// Boolean
+export const not = unary('!')
 
-export const plusV = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: '<+>', exprRight })
-
-export const minusV = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: '<->', exprRight })
-
-export const timesV = (exprLeft: Expr, exprRight: Expr): Expr =>
-  Expr.Binary({ exprLeft, op: '*>', exprRight })
+export const lt = binary('<')
+export const lteq = binary('<=')
+export const gt = binary('>')
+export const gteq = binary('>=')
+export const eq = binary('==')
+export const neq = binary('!=')
+export const and = binary('&&')
+export const or = binary('||')

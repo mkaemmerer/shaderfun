@@ -32,6 +32,10 @@ export const compileSDF = (sdf: SDF, gl: WebGLRenderingContext) => {
     precision mediump float;
     uniform float width, height;
     
+    float saturate(float v) {
+      return clamp(v, 0., 1.);
+    }
+
     float distanceEstimate(vec2 p) {
       ${indentLines(source, 6).trim()}
     }

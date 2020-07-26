@@ -128,10 +128,10 @@ export const repeatLogPolar = (count: S): SDFTransform => (sdf) => (p) => {
   const r = length(p)
   // Apply the forward log-polar map
   const pos = {
-    x: log(max(0.00001, length(p))),
+    x: log(max(0.00001, r)),
     y: atan(p.y, p.x),
   }
-  // Scale everything so tiles will fit nicely in the ]-pi,pi] interval
+  // Scale everything so tiles will fit nicely in the [-pi,pi] interval
   const scale = count / TAU
   const scaled = times(scale, pos)
   const repeated = {

@@ -50,6 +50,7 @@ const precedenceTable = [
   ['==', '!='],
   ['&&'],
   ['||'],
+  ['?:'],
 ]
 const top = Infinity
 const opPrecedence = (op) =>
@@ -60,8 +61,11 @@ const fixPrecedence = (expr: Expr, prec: Number): Expr =>
     'Expr.Var': () => expr,
     'Expr.Lit': () => expr,
     'Expr.Paren': ({ expr }) => Expr.Paren(fixPrecedence(expr, top)),
-    'Expr.Unary': ({ op, expr }) =>
-      Expr.Unary({ op, expr: fixPrecedence(expr, top) }),
+    'Expr.Unary': ({ op, expr }) => {
+      const opPrec = op === '-' ? 1 : Infinity
+      const inner = Expr.Unary({ op, expr: fixPrecedence(expr, top) })
+      return opPrec >= prec ? Expr.Paren(inner) : inner
+    },
     'Expr.Vec': ({ x, y }) =>
       Expr.Vec({
         x: fixPrecedence(x, top),
@@ -76,12 +80,15 @@ const fixPrecedence = (expr: Expr, prec: Number): Expr =>
       })
       return opPrec >= prec ? Expr.Paren(inner) : inner
     },
-    'Expr.If': ({ condition, thenBranch, elseBranch }) =>
-      Expr.If({
+    'Expr.If': ({ condition, thenBranch, elseBranch }) => {
+      const opPrec = opPrecedence('?:')
+      const inner = Expr.If({
         condition: fixPrecedence(condition, prec),
         thenBranch: fixPrecedence(thenBranch, prec),
         elseBranch: fixPrecedence(elseBranch, prec),
-      }),
+      })
+      return opPrec >= prec ? Expr.Paren(inner) : inner
+    },
     'Expr.Bind': ({ variable, type, value, body }) =>
       Expr.Bind({
         variable,

@@ -8,8 +8,11 @@ export type UnaryOp =
   | 'abs'
   | 'sin'
   | 'cos'
+  | 'log'
   | 'projX'
   | 'projY'
+  | 'saturate'
+  | 'sqrt'
 export type BinaryOp =
   | '=='
   | '!='
@@ -23,6 +26,7 @@ export type BinaryOp =
   | 'max'
   | 'min'
   | 'mod'
+  | 'atan'
   // scalar -> scalar -> bool
   | '<'
   | '<='
@@ -33,6 +37,8 @@ export type BinaryOp =
   | '<->'
   // scalar -> vector -> vector
   | '*>'
+  // vector -> vector -> scalar
+  | 'dot'
 
 // Expressions
 export type Expr =

@@ -1,58 +1,123 @@
 import { V2, S } from '../util/vector'
 import { Expr } from './ast'
-import { ShaderContext, pure, decl, sequenceM } from './shader-context'
+import { ShaderContext, pure, decl, sequenceM, Do } from './shader-context'
 import { Type } from './ast/types'
 import {
-  lit,
-  vec,
-  length,
   abs,
-  plus,
-  minus,
-  times,
-  mod,
-  plusV,
-  minusV,
-  timesV,
+  atan,
+  cos,
+  div,
+  dot,
+  length,
+  lit,
+  log,
   max,
   min,
+  minus,
+  minusV,
+  mod,
   negate,
+  plus,
+  plusV,
   projX,
   projY,
+  saturate,
+  sqrt,
   sin,
-  cos,
+  times,
+  timesV,
+  vec,
+  gteq,
+  lt,
+  gt,
+  and,
+  or,
+  not,
 } from './lang'
 
-const cast = (v: V2): Expr => vec({ x: lit(v.x), y: lit(v.y) })
+const TAU = Math.PI * 2
 
 export type SDF = (e: Expr) => ShaderContext<Expr>
-
 export type SDFTransform = (sdf: SDF) => SDF
+
+// Utils
+const cast = (v: V2): Expr => vec({ x: lit(v.x), y: lit(v.y) })
+const id = (x: any) => x
+const compose2 = <A, B, C>(f: (b: B) => C, g: (a: A) => B) => (x: A) => f(g(x))
+
+const conj = (...conds) => conds.reduce(and)
+const disj = (...conds) => conds.reduce(or)
+
+const segments = <T>(arr: T[]): [T, T][] =>
+  arr.map((x, i) => [i == 0 ? arr[arr.length - 1] : arr[i - 1], x])
+
+const projectSegment = (a: Expr, b: Expr) => (p: Expr) =>
+  Do(function* () {
+    const pa = yield decl(Type.Vec)(minus(p, a))
+    const ba = yield decl(Type.Vec)(minus(b, a))
+    const fac = yield decl(Type.Number)(saturate(div(dot(pa, ba), dot(ba, ba))))
+    return pure(plus(a, times(fac, ba)))
+  })
 
 const overDomain = (f: (p: Expr) => ShaderContext<Expr>): SDFTransform => (
   sdf: SDF
 ) => (p) => f(p).flatMap(decl(Type.Vec)).flatMap(sdf)
+
 const overRange = (f: (s: Expr) => ShaderContext<Expr>): SDFTransform => (
-  sdf
-) => (p) => sdf(p).flatMap(f)
+  sdf: SDF
+) => (p) => sdf(p).flatMap(decl(Type.Number)).flatMap(f)
 
 // Geometry
 export const point: SDF = (p) => pure(length(p))
 
 export const circle = (r: S): SDF => (p) => pure(minus(length(p), lit(r)))
 
-export const box = (corner: V2): SDF => (p) => {
-  const exprD = minus(abs(p), cast(corner))
-  return decl(Type.Vec)(exprD).flatMap((d) => {
-    const exprC = vec({
-      x: max(projX(d), lit(0)),
-      y: max(projY(d), lit(0)),
-    })
-    return decl(Type.Vec)(exprC).flatMap((c) =>
-      pure(plus(length(c), min(max(projX(d), projY(d)), lit(0))))
+export const box = (corner: V2): SDF => (p) =>
+  Do(function* () {
+    const d = yield decl(Type.Vec)(minus(abs(p), cast(corner)))
+    const c = yield decl(Type.Vec)(
+      vec({
+        x: max(projX(d), lit(0)),
+        y: max(projY(d), lit(0)),
+      })
     )
+    return pure(plus(length(c), min(max(projX(d), projY(d)), lit(0))))
   })
-}
+
+export const polygon = (v: V2[]): SDF => (p) =>
+  Do(function* () {
+    const pv = yield decl(Type.Vec)(minus(p, cast(v[0])))
+
+    let d = yield decl(Type.Number)(dot(pv, pv))
+    let sign = lit(1)
+    for (const [a, b] of segments(v)) {
+      const e = yield decl(Type.Vec)(minus(cast(a), cast(b)))
+      const w = yield decl(Type.Vec)(minus(p, cast(b)))
+      const projected = yield projectSegment(cast(a), cast(b))(p)
+      const c = yield decl(Type.Vec)(minus(p, projected))
+      d = yield decl(Type.Number)(min(d, dot(c, c)))
+
+      // Flip sign if we crossed an edge
+      const cond1 = yield decl(Type.Bool)(gteq(projY(p), lit(b.y)))
+      const cond2 = yield decl(Type.Bool)(lt(projY(p), lit(a.y)))
+      const cond3 = yield decl(Type.Bool)(
+        gt(times(projX(e), projY(w)), times(projY(e), projX(w)))
+      )
+      const condition = yield decl(Type.Bool)(
+        disj(
+          conj(cond1, cond2, cond3),
+          conj(not(cond1), not(cond2), not(cond3))
+        )
+      )
+      const newSign = Expr.If({
+        condition,
+        thenBranch: lit(1),
+        elseBranch: lit(-1),
+      })
+      sign = yield decl(Type.Number)(times(sign, newSign))
+    }
+    return pure(times(sign, sqrt(d)))
+  })
 
 // Operators
 // NB: these break the distance field
@@ -80,10 +145,9 @@ export const translate = (v: V2): SDFTransform =>
 
 export const rotate = (angle: S): SDFTransform =>
   overDomain((p) =>
-    sequenceM([
-      decl(Type.Number)(cos(lit(angle))),
-      decl(Type.Number)(sin(lit(angle))),
-    ]).flatMap(([cosa, sina]) => {
+    Do(function* () {
+      const cosa = yield decl(Type.Number)(cos(lit(angle)))
+      const sina = yield decl(Type.Number)(sin(lit(angle)))
       const px = projX(p)
       const py = projY(p)
       return pure(
@@ -99,6 +163,8 @@ export const scale = (s: S): SDFTransform => (sdf) => (p) =>
   sdf(timesV(lit(1 / s), p)).map((p) => times(p, lit(s)))
 
 // Domain repetition
+export const compose = (...fs) => fs.reduce(compose2, id)
+
 export const mirrorX = overDomain((p) =>
   pure(vec({ x: abs(projX(p)), y: projY(p) }))
 )
@@ -126,6 +192,47 @@ export const repeatY = (cellSize: S) =>
       })
     )
   )
+
+export const repeatGrid = (sizeX: S, sizeY: S = sizeX) =>
+  compose(repeatX(sizeX), repeatY(sizeY))
+
+export const repeatPolar = (count: S): SDFTransform =>
+  overDomain((p) =>
+    Do(function* () {
+      const angle = TAU / count
+      const halfAngle = angle * 0.5
+      const a = yield decl(Type.Number)(
+        plus(atan(projY(p), projX(p)), lit(halfAngle))
+      )
+      const r = yield decl(Type.Number)(length(p))
+      const theta = yield decl(Type.Number)(
+        minus(mod(a, lit(angle)), lit(halfAngle))
+      )
+      return pure(timesV(r, vec({ x: cos(theta), y: sin(theta) })))
+    })
+  )
+
+// // Domain repetition extras
+export const repeatLogPolar = (count: S): SDFTransform => (sdf) => (p) =>
+  Do(function* () {
+    const r = yield decl(Type.Number)(length(p))
+    // Apply the forward log-polar map
+    const pos = yield decl(Type.Vec)(
+      vec({
+        x: log(max(lit(0.00001), r)),
+        y: atan(projY(p), projX(p)),
+      })
+    )
+    // Scale everything so tiles will fit nicely in the [-pi,pi] interval
+    const scale = lit(count / TAU)
+    const scaled = yield decl(Type.Vec)(timesV(scale, pos))
+    const repeated = vec({
+      x: minus(mod(plus(projX(scaled), lit(0.5)), lit(1)), lit(0.5)),
+      y: minus(mod(plus(projY(scaled), lit(0.5)), lit(1)), lit(0.5)),
+    })
+    const d = yield sdf(repeated)
+    return pure(div(times(d, r), scale))
+  })
 
 // Morphology
 export const dilate = (fac: S) => (sdf: SDF): SDF => (p: Expr) =>
