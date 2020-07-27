@@ -6,6 +6,7 @@ export type UnaryOp =
   | '!'
   | 'length'
   | 'abs'
+  | 'absV'
   | 'sin'
   | 'cos'
   | 'log'

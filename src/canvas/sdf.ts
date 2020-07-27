@@ -147,3 +147,9 @@ export const dilate = (fac: S) => overRange((r: S) => r - fac)
 export const outline = (fac: S) => overRange((r) => abs(r) - fac)
 
 export const invert = overRange((r: S) => -r)
+
+export const extrudeX = (fac: S) =>
+  overDomain((p) => minus(p, { x: clamp(-fac, fac)(p.x), y: 0 }))
+
+export const extrudeY = (fac: S) =>
+  overDomain((p) => minus(p, { x: 0, y: clamp(-fac, fac)(p.y) }))

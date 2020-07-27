@@ -4,6 +4,7 @@ import { ShaderContext, pure, decl, sequenceM, Do } from './shader-context'
 import { Type } from './ast/types'
 import {
   abs,
+  absV,
   atan,
   cos,
   div,
@@ -45,6 +46,7 @@ const cast = (v: V2): Expr => vec({ x: lit(v.x), y: lit(v.y) })
 const id = <T>(x: T): T => x
 const compose2 = <A, B, C>(f: (b: B) => C, g: (a: A) => B) => (x: A) => f(g(x))
 
+const clamp = (expr: Expr, lo: Expr, hi: Expr): Expr => max(min(expr, hi), lo)
 const conj = (...conds: Expr[]) => conds.reduce(and)
 const disj = (...conds: Expr[]) => conds.reduce(or)
 
@@ -74,7 +76,7 @@ export const circle = (r: S): SDF => (p) => pure(minus(length(p), lit(r)))
 
 export const box = (corner: V2): SDF => (p) =>
   Do(function* () {
-    const d = yield decl(Type.Vec)(minus(abs(p), cast(corner)))
+    const d = yield decl(Type.Vec)(minus(absV(p), cast(corner)))
     const c = yield decl(Type.Vec)(
       vec({
         x: max(projX(d), lit(0)),
@@ -218,7 +220,7 @@ export const repeatPolar = (count: S): SDFTransform =>
     })
   )
 
-// // Domain repetition extras
+// Domain repetition extras
 export const repeatLogPolar = (count: S): SDFTransform => (sdf) => (p) =>
   Do(function* () {
     const r = yield decl(Type.Scalar)(length(p))
@@ -248,3 +250,13 @@ export const outline = (fac: S) =>
   overRange((r) => pure(minus(abs(r), lit(fac))))
 
 export const invert = overRange((r) => pure(negate(r)))
+
+export const extrudeX = (fac: S) =>
+  overDomain((p) =>
+    pure(minus(p, vec({ x: clamp(projX(p), lit(-fac), lit(fac)), y: lit(0) })))
+  )
+
+export const extrudeY = (fac: S) =>
+  overDomain((p) =>
+    pure(minus(p, vec({ x: lit(0), y: clamp(projY(p), lit(-fac), lit(fac)) })))
+  )

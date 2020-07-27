@@ -31,6 +31,8 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
     'Expr.Var': ({ variable }) => lookupVar(variable),
     'Expr.Lit': ({ value }) => pure(literalType(value)),
     'Expr.Unary': ({ expr, op }) => {
+      const checkUnary = (typeIn: Type, typeResult: Type) =>
+        checkExpr(typeIn)(expr).map(() => typeResult)
       switch (op) {
         // Scalar -> Scalar
         case '-': // fall-through
@@ -40,15 +42,18 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         case 'log': // fall-through
         case 'saturate': // fall-through
         case 'sqrt':
-          return checkExpr(Type.Scalar)(expr).map(() => Type.Scalar)
+          return checkUnary(Type.Scalar, Type.Scalar)
+        // Vector -> Vector
+        case 'absV':
+          return checkUnary(Type.Vec, Type.Vec)
         // Vector -> Scalar
         case 'projX': // fall-through
         case 'projY': // fall-through
         case 'length':
-          return checkExpr(Type.Vec)(expr).map(() => Type.Scalar)
+          return checkUnary(Type.Vec, Type.Scalar)
         // Bool -> Bool
         case '!':
-          return checkExpr(Type.Bool)(expr).map(() => Type.Bool)
+          return checkUnary(Type.Bool, Type.Bool)
       }
     },
     'Expr.Binary': ({ exprLeft, op, exprRight }) => {

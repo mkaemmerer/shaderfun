@@ -99,6 +99,9 @@ const printUnaryExpr = (op: UnaryOp, exprDoc: Doc<string>): Doc<string> => {
     case 'sqrt': // fall-through
     case 'saturate':
       return seq(str(op), parens(exprDoc))
+    // Vector Prefix
+    case 'absV':
+      return seq(str('abs'), parens(exprDoc))
     // Postfix
     case 'projX':
       return seq(exprDoc, str('.x'))

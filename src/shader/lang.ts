@@ -32,6 +32,7 @@ export const min = binary('min')
 export const mod = binary('mod')
 
 // Vector
+export const absV = unary('absV')
 export const length = unary('length')
 export const projX = unary('projX')
 export const projY = unary('projY')
