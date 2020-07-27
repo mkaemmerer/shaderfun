@@ -84,6 +84,12 @@ export const box = (corner: V2): SDF => (p) =>
     return pure(plus(length(c), min(max(projX(d), projY(d)), lit(0))))
   })
 
+export const segment = (a: V2, b: V2): SDF => (p) =>
+  Do(function* () {
+    const c = yield projectSegment(cast(a), cast(b))(p)
+    return length(minus(p, c))
+  })
+
 export const polygon = (v: V2[]): SDF => (p) =>
   Do(function* () {
     const pv = yield decl(Type.Vec)(minus(p, cast(v[0])))
