@@ -1,8 +1,8 @@
 import { compileShader } from './gl/compile'
 import { drawShader } from './gl/draw'
-import { Expr, print, normalize } from './ast'
+import { Expr, print, normalize } from './lang'
 import { SDF } from './sdf'
-import { run } from './shader-context'
+import { run } from './shader'
 
 const buildSDF = (sdf: SDF) => {
   const result: Expr = run(sdf(Expr.Var('p')))

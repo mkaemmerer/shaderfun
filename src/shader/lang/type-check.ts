@@ -114,7 +114,7 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
       ),
     'Expr.Bind': ({ variable, type, value, body }) =>
       scoped(
-        checkExpr(type)(value)
+        (type == null ? synthExpr(value) : checkExpr(type)(value))
           .flatMap((variableType) => defineVar(variable, variableType))
           .flatMap(() => synthExpr(body))
       ),
@@ -151,18 +151,62 @@ const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
       // Set variable in context...
       'Expr.Bind': ({ variable, type: varType, value, body }) =>
         scoped(
-          checkExpr(varType)(value)
+          (varType == null ? synthExpr(value) : checkExpr(varType)(value))
             .flatMap((variableType) => defineVar(variable, variableType))
             .flatMap(() => checkExprInner(type)(body))
         ),
     })
   )
 
-const checkProg = (expr: Expr): TypeChecker<Expr> =>
-  checkExpr(Type.Scalar)(expr).map(() => expr)
+//-----------------------------------------------------------------------------
+// Populate Types
+//-----------------------------------------------------------------------------
+const populateExpr = (expr: Expr): TypeChecker<Expr> =>
+  match(expr, {
+    'Expr.Var': () => pure(expr),
+    'Expr.Lit': () => pure(expr),
+    'Expr.Unary': ({ op, expr }) =>
+      populateExpr(expr).map((expr) => Expr.Unary({ op, expr })),
+    'Expr.Binary': ({ op, exprLeft, exprRight }) =>
+      sequenceM([
+        populateExpr(exprLeft),
+        populateExpr(exprRight),
+      ]).map(([exprLeft, exprRight]) =>
+        Expr.Binary({ exprLeft, op, exprRight })
+      ),
+    'Expr.Vec': ({ x, y }) =>
+      sequenceM([populateExpr(x), populateExpr(y)]).map(([x, y]) =>
+        Expr.Vec({ x, y })
+      ),
+    'Expr.Paren': ({ expr }) =>
+      populateExpr(expr).map((expr) => Expr.Paren(expr)),
+    'Expr.If': ({ condition, thenBranch, elseBranch }) =>
+      sequenceM([
+        populateExpr(condition),
+        populateExpr(thenBranch),
+        populateExpr(elseBranch),
+      ]).map(([condition, thenBranch, elseBranch]) =>
+        Expr.If({ condition, thenBranch, elseBranch })
+      ),
+    // Populate binding with type
+    'Expr.Bind': ({ variable, value, body }) => {
+      const valueM = populateExpr(value)
+      const typeM = synthExpr(value)
+      const bodyM = scoped(
+        typeM
+          .flatMap((variableType) => defineVar(variable, variableType))
+          .flatMap(() => populateExpr(body))
+      )
+      return sequenceM([valueM, bodyM]).flatMap(([value, body]) =>
+        typeM.map((type) => Expr.Bind({ variable, type, value, body }))
+      )
+    },
+  })
 
 export const typeCheck = (expr: Expr): Expr =>
-  checkProg(expr)
+  defineVar('p', Type.Vec) // Set default bindings
+    .flatMap(() => synthExpr(expr))
+    .flatMap(() => populateExpr(expr))
     .run(empty)
-    .map(([ctx, prog]) => prog)
+    .map(([ctx, expr]) => expr)
     .coerce()

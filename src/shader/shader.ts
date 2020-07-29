@@ -27,7 +27,7 @@ const newVar = (): Shader<Var> =>
     State.set({ count: count + 1, cont }).map(() => `var_${count}`)
   )
 
-export const decl = (type: Type) => (expr: Expr): Shader<Expr> =>
+export const decl = (expr: Expr): Shader<Expr> =>
   newVar().flatMap((v) =>
     State.get<ShaderState>()
       .flatMap(({ count, cont }) => {
@@ -35,7 +35,6 @@ export const decl = (type: Type) => (expr: Expr): Shader<Expr> =>
           cont(
             Expr.Bind({
               variable: v,
-              type: type,
               value: expr,
               body: body,
             })

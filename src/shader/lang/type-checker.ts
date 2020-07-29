@@ -16,7 +16,7 @@ export type TypeChecker<T> = TryState<TypeContext, T>
 
 export class TypeError extends Error {
   readonly loc: Loc
-  constructor(reason: string, loc: Loc) {
+  constructor(reason: string, loc: Loc, ctx: TypeContext) {
     super(reason)
     this.loc = loc
   }
@@ -26,7 +26,7 @@ export const pure = <T>(v: T): TypeChecker<T> => TryState.of(v)
 export const fail = <T>(reason: string): TypeChecker<T> =>
   TryState.get<TypeContext>().flatMap((ctx) => {
     const loc = ctx.locs[0]
-    return TryState.fail(new TypeError(reason, loc))
+    return TryState.fail(new TypeError(reason, loc, ctx))
   })
 
 // Error messages

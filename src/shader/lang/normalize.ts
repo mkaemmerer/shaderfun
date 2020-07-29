@@ -1,5 +1,7 @@
 import match from '../../util/match'
 import { Expr } from './ast'
+import { tagLocation } from './tag-location'
+import { typeCheck } from './type-check'
 
 type KSingle = (e: Expr) => Expr
 type KArray = (e: Expr[]) => Expr
@@ -99,7 +101,12 @@ const fixPrecedence = (expr: Expr, prec: number): Expr =>
   })
 
 const id = (x) => x
-const normalizeExpr = (expr: Expr): Expr =>
-  fixPrecedence(liftDecl(expr, id), top)
+const normalizeExpr = (expr: Expr): Expr => {
+  const tagged = tagLocation(expr)
+  const typedExpr = typeCheck(tagged)
+  const withBindings = liftDecl(typedExpr, id)
+  const withPrecedence = fixPrecedence(withBindings, top)
+  return withPrecedence
+}
 
 export const normalize = normalizeExpr

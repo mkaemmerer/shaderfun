@@ -102,7 +102,7 @@ export interface ExprVec {
 export interface ExprBind {
   kind: 'Expr.Bind'
   variable: string
-  type: Type
+  type?: Type
   value: Expr
   body: Expr
   loc?: Loc
@@ -135,11 +135,11 @@ export const Expr = {
     x,
     y,
   }),
-  Bind: ({ variable, type, value, body }): Expr => ({
+  Bind: ({ variable, type = null, value, body }): Expr => ({
     kind: 'Expr.Bind',
     variable,
-    type,
     value,
+    type,
     body,
   }),
 }
