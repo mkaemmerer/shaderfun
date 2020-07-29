@@ -1,7 +1,7 @@
 import { V2, S } from '../util/vector'
-import { Expr } from './ast'
-import { ShaderContext, pure, decl, sequenceM, Do } from './shader-context'
-import { Type } from './ast/types'
+import { Expr } from './lang'
+import { Shader, pure, decl, sequenceM, Do } from './shader'
+import { Type } from './lang/types'
 import {
   abs,
   absV,
@@ -34,11 +34,11 @@ import {
   and,
   or,
   not,
-} from './lang'
+} from './built-ins'
 
 const TAU = Math.PI * 2
 
-export type SDF = (e: Expr) => ShaderContext<Expr>
+export type SDF = (e: Expr) => Shader<Expr>
 export type SDFTransform = (sdf: SDF) => SDF
 
 // Utils
@@ -61,11 +61,11 @@ const projectSegment = (a: Expr, b: Expr) => (p: Expr) =>
     return pure(plus(a, times(fac, ba)))
   })
 
-const overDomain = (f: (p: Expr) => ShaderContext<Expr>): SDFTransform => (
+const overDomain = (f: (p: Expr) => Shader<Expr>): SDFTransform => (
   sdf: SDF
 ) => (p) => f(p).flatMap(decl(Type.Vec)).flatMap(sdf)
 
-const overRange = (f: (s: Expr) => ShaderContext<Expr>): SDFTransform => (
+const overRange = (f: (s: Expr) => Shader<Expr>): SDFTransform => (
   sdf: SDF
 ) => (p) => sdf(p).flatMap(decl(Type.Scalar)).flatMap(f)
 

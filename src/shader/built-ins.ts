@@ -1,4 +1,4 @@
-import { Expr, UnaryOp, BinaryOp } from './ast'
+import { Expr, UnaryOp, BinaryOp } from './lang'
 
 // Util
 const unary = (op: UnaryOp) => (expr: Expr): Expr => Expr.Unary({ op, expr })

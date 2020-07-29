@@ -1,4 +1,5 @@
 export { Expr, UnaryOp, BinaryOp } from './ast'
+export { Type } from './types'
 export { tagLocation } from './tag-location'
 export { typeCheck } from './type-check'
 export { print } from './print'
