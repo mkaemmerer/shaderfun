@@ -1,4 +1,4 @@
-import { SDF } from '../sdf'
+import { SDF } from './sdf'
 import { ColorRGB, black, white, grayscale, mix } from '../util/color'
 
 const bufferCanvas = document.createElement('canvas')

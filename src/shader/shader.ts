@@ -1,5 +1,5 @@
 import { State } from '../monad/state'
-import { Expr, Type } from './lang'
+import { Expr } from './lang'
 
 type Var = string
 type K = (expr: Expr) => Expr

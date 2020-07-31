@@ -1,7 +1,6 @@
 import { V2, S } from '../util/vector'
 import { Expr } from './lang'
 import { Shader, pure, decl, sequenceM, Do } from './shader'
-import { Type } from './lang/types'
 import {
   abs,
   absV,
