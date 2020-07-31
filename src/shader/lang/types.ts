@@ -1,7 +1,13 @@
 import { Maybe } from '../../data/maybe'
 
-export type Type = TypeBool | TypeScalar | TypeVec
+export type Type = TypeArrow | TypeBool | TypeScalar | TypeVec
 
+export interface TypeArrow {
+  kind: 'Type.Arrow'
+  input: Type[]
+  output: Type
+  toString: () => string
+}
 export interface TypeVec {
   kind: 'Type.Vec'
   toString: () => string
@@ -16,6 +22,14 @@ export interface TypeBool {
 }
 
 export const Type = {
+  Arrow: (input: Type[], output: Type): Type => ({
+    kind: 'Type.Arrow',
+    input,
+    output,
+    toString() {
+      return `${this.input} -> ${this.output}`
+    },
+  }),
   Vec: {
     kind: 'Type.Vec',
     toString() {
@@ -45,7 +59,17 @@ export const literalType = (lit: any): Type => {
   }
 }
 
-const equalTypes = (t1: Type, t2: Type): boolean => t1.kind === t2.kind
+export const isArrow = (t: Type): t is TypeArrow => t.kind === 'Type.Arrow'
+
+const allEqual = (t1: Type[], t2: Type[]): boolean => {
+  if (t1.length !== t2.length) return false
+  return t1.every((_, i) => equalTypes(t1[i], t2[i]))
+}
+
+const equalTypes = (t1: Type, t2: Type): boolean =>
+  isArrow(t1) && isArrow(t2)
+    ? allEqual(t1.input, t2.input) && equalTypes(t1.output, t2.output)
+    : t1.kind === t2.kind
 
 export const unify = (t1: Type, t2: Type): Maybe<Type> => {
   if (equalTypes(t1, t2)) {

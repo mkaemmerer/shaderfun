@@ -12,8 +12,15 @@ import {
   withLocation,
   expectType,
   unifyVar,
+  expectFunction,
+  defineFunc,
 } from './type-checker'
 import { empty } from './type-context'
+
+const zipWith = <A, B, C>(f: (a: A) => (b: B) => C) => (
+  as: A[],
+  bs: B[]
+): C[] => as.map((_, i) => f(as[i])(bs[i]))
 
 //-----------------------------------------------------------------------------
 // Type Synthesis
@@ -36,20 +43,10 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
       switch (op) {
         // Scalar -> Scalar
         case '-': // fall-through
-        case 'abs': // fall-through
-        case 'sin': // fall-through
-        case 'cos': // fall-through
-        case 'log': // fall-through
-        case 'saturate': // fall-through
-        case 'sqrt':
           return checkUnary(Type.Scalar, Type.Scalar)
-        // Vector -> Vector
-        case 'absV':
-          return checkUnary(Type.Vec, Type.Vec)
         // Vector -> Scalar
         case 'projX': // fall-through
-        case 'projY': // fall-through
-        case 'length':
+        case 'projY':
           return checkUnary(Type.Vec, Type.Scalar)
         // Bool -> Bool
         case '!':
@@ -78,10 +75,6 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         case '-': // fall-through
         case '*': // fall-through
         case '/': // fall-through
-        case 'max': // fall-through
-        case 'min': // fall-through
-        case 'mod': // fall-through
-        case 'atan':
           return checkBinary(Type.Scalar, Type.Scalar, Type.Scalar)
         // Vector -> Vector -> Vector
         case '<+>': // fall-through
@@ -90,9 +83,6 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         // Scalar -> Vector -> Vector
         case '*>':
           return checkBinary(Type.Scalar, Type.Vec, Type.Vec)
-        // Vector -> Vector -> Scalar
-        case 'dot':
-          return checkBinary(Type.Vec, Type.Vec, Type.Scalar)
         // Scalar -> Scalar -> Bool
         case '<': // fall-through
         case '<=': // fall-through
@@ -101,6 +91,17 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
           return checkBinary(Type.Scalar, Type.Scalar, Type.Bool)
       }
     },
+    'Expr.Call': ({ fn, args }) =>
+      // Make sure we're applying to a function type
+      lookupVar(fn)
+        .flatMap(expectFunction)
+        .flatMap(({ input, output }) =>
+          input.length === args.length
+            ? sequenceM(
+                zipWith<Type, Expr, TypeChecker<Type>>(checkExpr)(input, args)
+              ).map(() => output)
+            : fail('wrong number of arguments')
+        ),
     'Expr.Paren': ({ expr }) => synthExpr(expr),
     'Expr.If': ({ condition, thenBranch, elseBranch }) =>
       pure(undefined)
@@ -135,6 +136,7 @@ const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
       'Expr.Lit':    () => checkExprInner(type)(expr), // prettier-ignore
       'Expr.Unary':  () => checkExprInner(type)(expr), // prettier-ignore
       'Expr.Binary': () => checkExprInner(type)(expr), // prettier-ignore
+      'Expr.Call':   () => checkExprInner(type)(expr), // prettier-ignore
       'Expr.Vec':    () => checkExprInner(type)(expr), // prettier-ignore
       // Pass expectation forward to inner expression
       'Expr.Paren': ({ expr: exprBody }) => checkExpr(type)(exprBody),
@@ -174,6 +176,8 @@ const populateExpr = (expr: Expr): TypeChecker<Expr> =>
       ]).map(([exprLeft, exprRight]) =>
         Expr.Binary({ exprLeft, op, exprRight })
       ),
+    'Expr.Call': ({ fn, args }) =>
+      sequenceM(args.map(populateExpr)).map((args) => Expr.Call({ fn, args })),
     'Expr.Vec': ({ x, y }) =>
       sequenceM([populateExpr(x), populateExpr(y)]).map(([x, y]) =>
         Expr.Vec({ x, y })
@@ -203,8 +207,29 @@ const populateExpr = (expr: Expr): TypeChecker<Expr> =>
     },
   })
 
+const defineBuiltins = sequenceM([
+  defineVar('p', Type.Vec),
+  // Scalar -> Scalar
+  defineFunc('abs',      [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('sin',      [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('cos',      [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('log',      [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('saturate', [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('sqrt',     [Type.Scalar], Type.Scalar), // prettier-ignore
+  // (Scalar, Scalar) -> Scalar
+  defineFunc('max',  [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('min',  [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('mod',  [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('atan', [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('length', [Type.Vec], Type.Scalar),
+  // Vec -> Vec
+  defineFunc('absV', [Type.Vec], Type.Vec),
+  // (Vec, Vec) -> Scalar
+  defineFunc('dot', [Type.Vec, Type.Vec], Type.Scalar),
+])
+
 export const typeCheck = (expr: Expr): Expr =>
-  defineVar('p', Type.Vec) // Set default bindings
+  defineBuiltins // Set default bindings
     .flatMap(() => synthExpr(expr))
     .flatMap(() => populateExpr(expr))
     .run(empty)

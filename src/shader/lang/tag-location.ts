@@ -1,7 +1,14 @@
 import match from '../../util/match'
 import { empty } from './location'
-import { readLocation, withKey, pure, ASTContext } from './ast-context'
+import {
+  readLocation,
+  withKey,
+  withArray,
+  pure,
+  ASTContext,
+} from './ast-context'
 import { Expr } from './ast'
+import { sequenceM } from './type-checker'
 
 const writeLocation = (astM: ASTContext<Expr>): ASTContext<any> =>
   readLocation().flatMap((loc) =>
@@ -27,6 +34,10 @@ const tagExpr = (expr: Expr): ASTContext<Expr> =>
             pure(Expr.Binary({ exprLeft, op, exprRight }))
           )
         )
+      },
+      'Expr.Call': ({ fn, args }) => {
+        const argsM = withArray('args', args.map(tagExpr))
+        return argsM.flatMap((args) => pure(Expr.Call({ fn, args })))
       },
       'Expr.Paren': ({ expr }) =>
         withKey('expr', tagExpr(expr)).map((expr) => Expr.Paren(expr)),

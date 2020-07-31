@@ -1,4 +1,4 @@
-import { Type, unify } from './types'
+import { Type, unify, TypeArrow, isArrow } from './types'
 import { TryState } from '../../monad/try-state'
 import { bestMatches } from '../../util/edit-distance'
 import {
@@ -86,6 +86,12 @@ export const defineVar = (
   type: Type
 ): TypeChecker<undefined> => TryState.modify(defineVarContext(variable, type))
 
+export const defineFunc = (
+  variable: string,
+  input: Type[],
+  output: Type
+): TypeChecker<undefined> => defineVar(variable, Type.Arrow(input, output))
+
 export const expectType = (expected: Type) => (
   actual: Type
 ): TypeChecker<Type> =>
@@ -93,6 +99,11 @@ export const expectType = (expected: Type) => (
     (unified) => pure(unified),
     () => typeMismatch(expected, actual)
   )
+
+export const expectFunction = (actual: Type): TypeChecker<TypeArrow> =>
+  isArrow(actual)
+    ? pure(actual)
+    : fail(`Expected function, but found ${actual}`)
 
 export const unifyVar = (variable: string, type: Type): TypeChecker<Type> =>
   lookupVar(variable)

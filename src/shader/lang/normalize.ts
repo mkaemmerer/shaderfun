@@ -30,6 +30,8 @@ const liftDecl = (expr: Expr, k: KSingle): Expr =>
         exprLeft,
         exprRight
       )(([exprLeft, exprRight]) => k(Expr.Binary({ op, exprLeft, exprRight }))),
+    'Expr.Call': ({ fn, args }) =>
+      liftDecls(...args)((args) => k(Expr.Call({ fn, args }))),
     'Expr.If': ({ condition, thenBranch, elseBranch }) =>
       liftDecls(
         condition,
@@ -63,16 +65,16 @@ const fixPrecedence = (expr: Expr, prec: number): Expr =>
     'Expr.Var': () => expr,
     'Expr.Lit': () => expr,
     'Expr.Paren': ({ expr }) => Expr.Paren(fixPrecedence(expr, top)),
-    'Expr.Unary': ({ op, expr }) => {
-      const opPrec = op === '-' ? 1 : Infinity
-      const inner = Expr.Unary({ op, expr: fixPrecedence(expr, top) })
-      return opPrec >= prec ? Expr.Paren(inner) : inner
-    },
     'Expr.Vec': ({ x, y }) =>
       Expr.Vec({
         x: fixPrecedence(x, top),
         y: fixPrecedence(y, top),
       }),
+    'Expr.Unary': ({ op, expr }) => {
+      const opPrec = op === '-' ? 1 : Infinity
+      const inner = Expr.Unary({ op, expr: fixPrecedence(expr, top) })
+      return opPrec >= prec ? Expr.Paren(inner) : inner
+    },
     'Expr.Binary': ({ op, exprLeft, exprRight }) => {
       const opPrec = opPrecedence(op)
       const inner = Expr.Binary({
@@ -82,6 +84,11 @@ const fixPrecedence = (expr: Expr, prec: number): Expr =>
       })
       return opPrec >= prec ? Expr.Paren(inner) : inner
     },
+    'Expr.Call': ({ fn, args }) =>
+      Expr.Call({
+        fn,
+        args: args.map((arg: Expr) => fixPrecedence(arg, top)),
+      }),
     'Expr.If': ({ condition, thenBranch, elseBranch }) => {
       const opPrec = opPrecedence('?:')
       const inner = Expr.If({

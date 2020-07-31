@@ -1,5 +1,5 @@
 import match from '../../util/match'
-import { layout, str, seq, newline, Doc } from '../../data/doc'
+import { layout, str, seq, newline, Doc, intersperse } from '../../data/doc'
 import { Expr, UnaryOp, BinaryOp } from './ast'
 import { Type } from './types'
 
@@ -9,6 +9,7 @@ const litToString = (x: any) => {
 }
 
 const parens = (doc: Doc<string>) => seq(str('('), doc, str(')'))
+const list = (docs: Doc<string>[]) => intersperse(docs, str(','))
 
 // Types
 const printType = (type: Type) =>
@@ -28,6 +29,7 @@ const printExprReturn = (expr: Expr): Doc<string> =>
     'Expr.Lit': () => printExprReturnInner(expr),
     'Expr.Unary': () => printExprReturnInner(expr),
     'Expr.Binary': () => printExprReturnInner(expr),
+    'Expr.Call': () => printExprReturnInner(expr),
     'Expr.Paren': () => printExprReturnInner(expr),
     'Expr.If': () => printExprReturnInner(expr),
     'Expr.Vec': () => printExprReturnInner(expr),
@@ -53,6 +55,8 @@ const printExpr = (expr: Expr): Doc<string> =>
     'Expr.Unary': ({ op, expr }) => printUnaryExpr(op, printExpr(expr)),
     'Expr.Binary': ({ exprLeft, op, exprRight }) =>
       printBinaryExpr(op, printExpr(exprLeft), printExpr(exprRight)),
+    'Expr.Call': ({ fn, args }) =>
+      seq(printFn(fn), parens(list(args.map(printExpr)))),
     'Expr.Paren': ({ expr }) => seq(str('('), printExpr(expr), str(')')),
     'Expr.If': ({ condition, thenBranch, elseBranch }) =>
       seq(
@@ -69,9 +73,9 @@ const printExpr = (expr: Expr): Doc<string> =>
         printExpr(y),
         str(')')
       ),
-    'Expr.Bind': ({ variable, value, body }) =>
+    'Expr.Bind': ({ variable, type, value, body }) =>
       seq(
-        str('let'),
+        printType(type),
         str(' '),
         str(variable),
         str(' '),
@@ -84,24 +88,22 @@ const printExpr = (expr: Expr): Doc<string> =>
       ),
   })
 
+const printFn = (fn: string): Doc<string> => {
+  switch (fn) {
+    // Convert statically-typed builtins to their polymorphic versions
+    case 'absV':
+      return str('abs')
+    default:
+      return str(fn)
+  }
+}
+
 const printUnaryExpr = (op: UnaryOp, exprDoc: Doc<string>): Doc<string> => {
   switch (op) {
     // Prefix
     case '-': // fall-through
     case '!':
       return seq(str(op), exprDoc)
-    // Prefix Function calls
-    case 'abs': // fall-through
-    case 'sin': // fall-through
-    case 'cos': // fall-through
-    case 'log': // fall-through
-    case 'length': // fall-through
-    case 'sqrt': // fall-through
-    case 'saturate':
-      return seq(str(op), parens(exprDoc))
-    // Vector Prefix
-    case 'absV':
-      return seq(str('abs'), parens(exprDoc))
     // Postfix
     case 'projX':
       return seq(exprDoc, str('.x'))
@@ -137,13 +139,6 @@ const printBinaryExpr = (
       return seq(exprLeft, str(' '), str('+'), str(' '), exprRight)
     case '<->':
       return seq(exprLeft, str(' '), str('-'), str(' '), exprRight)
-    // Prefix
-    case 'mod': // fall-through
-    case 'max': // fall-through
-    case 'min': // fall-through
-    case 'atan': // fall-through
-    case 'dot':
-      return seq(str(op), parens(seq(exprLeft, str(','), str(' '), exprRight)))
   }
 }
 
