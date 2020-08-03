@@ -10,7 +10,10 @@ const call$ = (builtin: Builtin) => (...exprs: Expr[]): Expr =>
   Expr.Call({ fn: builtin, args: exprs })
 
 // Language Primitives
-export const var$ = (name: string) => Expr.Var(name)
+export const var$ = (name: string): Expr => Expr.Var(name)
+
+export const if$ = (condition: Expr, thenBranch: Expr, elseBranch: Expr) =>
+  Expr.If({ condition, thenBranch, elseBranch })
 
 export const lit = (val: any): Expr => Expr.Lit(val)
 

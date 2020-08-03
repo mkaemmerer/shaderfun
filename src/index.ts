@@ -1,5 +1,6 @@
 import {
   SDF,
+  Program,
   circle,
   box,
   polygon,
@@ -14,7 +15,8 @@ import {
   repeatPolar,
   repeatLogPolar,
   invert,
-  drawSDF,
+  drawShader,
+  signRamp,
 } from './shader'
 
 const TAU = Math.PI * 2
@@ -49,6 +51,7 @@ const pattern = rotate(TAU / 20)(
 )
 
 const sdf: SDF = repeatLogPolar(12)(scale(0.001)(pattern))
+const program: Program = (p) => sdf(p).flatMap(signRamp)
 
 const canvas = document.querySelector('canvas') as HTMLCanvasElement
 const gl = canvas.getContext('webgl')
@@ -56,7 +59,7 @@ const gl = canvas.getContext('webgl')
 const draw = () => {
   canvas.width = canvas.clientWidth * devicePixelRatio
   canvas.height = canvas.clientHeight * devicePixelRatio
-  drawSDF(sdf)(gl)
+  drawShader(program)(gl)
 }
 window.addEventListener('resize', draw)
 draw()

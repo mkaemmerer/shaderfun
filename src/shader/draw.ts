@@ -1,20 +1,20 @@
 import { compileShader } from './gl/compile'
-import { drawShader } from './gl/draw'
+import { drawGL } from './gl/draw'
 import { Expr, print, normalize } from './lang'
-import { SDF } from './sdf'
-import { run } from './shader'
+import { Shader, run } from './shader'
 
-const buildSDF = (sdf: SDF) => {
-  const result: Expr = run(sdf(Expr.Var('p')))
+export type Program = (e: Expr) => Shader<Expr>
+
+const buildShader = (program: Program) => {
+  const result: Expr = run(program(Expr.Var('p')))
   const normalized = normalize(result)
   return print(normalized)
 }
 
-export const drawSDF = (sdf: SDF) => {
-  const source = buildSDF(sdf)
-
+export const drawShader = (program: Program) => {
+  const source = buildShader(program)
   return (gl: WebGLRenderingContext) => {
     const shader = compileShader(source, gl)
-    drawShader(gl, shader)
+    drawGL(gl, shader)
   }
 }

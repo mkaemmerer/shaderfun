@@ -1,4 +1,4 @@
-export const drawShader = (
+export const drawGL = (
   gl: WebGLRenderingContext,
   shaderProgram: WebGLProgram
 ) => {
