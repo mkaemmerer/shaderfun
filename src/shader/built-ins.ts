@@ -16,6 +16,8 @@ export const lit = (val: any): Expr => Expr.Lit(val)
 
 export const vec = ({ x, y }): Expr => Expr.Vec({ x, y })
 
+export const col = ({ r, g, b }): Expr => Expr.Col({ r, g, b })
+
 // Scalar
 export const negate = unary('-')
 export const abs = call$('abs')
@@ -44,6 +46,11 @@ export const plusV = binary('<+>')
 export const minusV = binary('<->')
 export const timesV = binary('*>')
 export const dot = call$('dot')
+
+// Color
+export const projR = unary('projR')
+export const projG = unary('projG')
+export const projB = unary('projB')
 
 // Boolean
 export const not = unary('!')

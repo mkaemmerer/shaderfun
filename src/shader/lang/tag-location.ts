@@ -5,10 +5,10 @@ import {
   withKey,
   withArray,
   pure,
+  sequenceM,
   ASTContext,
 } from './ast-context'
 import { Expr } from './ast'
-import { sequenceM } from './type-checker'
 
 const writeLocation = (astM: ASTContext<Expr>): ASTContext<any> =>
   readLocation().flatMap((loc) =>
@@ -23,21 +23,29 @@ const tagExpr = (expr: Expr): ASTContext<Expr> =>
     match(expr, {
       'Expr.Var': ({ variable }) => pure(Expr.Var(variable)),
       'Expr.Lit': ({ value }) => pure(Expr.Lit(value)),
-
+      'Expr.Vec': ({ x, y }) => {
+        const xM = withKey('x', tagExpr(x))
+        const yM = withKey('y', tagExpr(y))
+        return sequenceM([xM, yM]).map(([x, y]) => Expr.Vec({ x, y }))
+      },
+      'Expr.Col': ({ r, g, b }) => {
+        const rM = withKey('r', tagExpr(r))
+        const gM = withKey('g', tagExpr(g))
+        const bM = withKey('b', tagExpr(b))
+        return sequenceM([rM, gM, bM]).map(([r, g, b]) => Expr.Col({ r, g, b }))
+      },
       'Expr.Unary': ({ op, expr }) =>
         withKey('expr', tagExpr(expr)).map((expr) => Expr.Unary({ op, expr })),
       'Expr.Binary': ({ exprLeft, op, exprRight }) => {
         const exprLeftM = withKey('exprLeft', tagExpr(exprLeft))
         const exprRightM = withKey('exprRight', tagExpr(exprRight))
-        return exprLeftM.flatMap((exprLeft) =>
-          exprRightM.flatMap((exprRight) =>
-            pure(Expr.Binary({ exprLeft, op, exprRight }))
-          )
+        return sequenceM([exprLeftM, exprRightM]).map(([exprLeft, exprRight]) =>
+          Expr.Binary({ exprLeft, op, exprRight })
         )
       },
       'Expr.Call': ({ fn, args }) => {
         const argsM = withArray('args', args.map(tagExpr))
-        return argsM.flatMap((args) => pure(Expr.Call({ fn, args })))
+        return argsM.map((args) => Expr.Call({ fn, args }))
       },
       'Expr.Paren': ({ expr }) =>
         withKey('expr', tagExpr(expr)).map((expr) => Expr.Paren(expr)),
@@ -45,26 +53,19 @@ const tagExpr = (expr: Expr): ASTContext<Expr> =>
         const conditionM = withKey('condition', tagExpr(condition))
         const thenBranchM = withKey('thenBranch', tagExpr(thenBranch))
         const elseBranchM = withKey('elseBranch', tagExpr(elseBranch))
-        return conditionM.flatMap((condition) =>
-          thenBranchM.flatMap((thenBranch) =>
-            elseBranchM.flatMap((elseBranch) =>
-              pure(Expr.If({ condition, thenBranch, elseBranch }))
-            )
-          )
+        return sequenceM([
+          conditionM,
+          thenBranchM,
+          elseBranchM,
+        ]).map(([condition, thenBranch, elseBranch]) =>
+          Expr.If({ condition, thenBranch, elseBranch })
         )
-      },
-      'Expr.Vec': ({ x, y }) => {
-        const xM = withKey('x', tagExpr(x))
-        const yM = withKey('y', tagExpr(y))
-        return xM.flatMap((x) => yM.flatMap((y) => pure(Expr.Vec({ x, y }))))
       },
       'Expr.Bind': ({ variable, type, value, body }) => {
         const valueM = withKey('value', tagExpr(value))
         const bodyM = withKey('body', tagExpr(body))
-        return valueM.flatMap((value) =>
-          bodyM.flatMap((body) =>
-            pure(Expr.Bind({ variable, type, value, body }))
-          )
+        return sequenceM([valueM, bodyM]).map(([value, body]) =>
+          Expr.Bind({ variable, type, value, body })
         )
       },
     })

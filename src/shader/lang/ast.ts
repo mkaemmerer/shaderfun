@@ -15,7 +15,14 @@ export type Builtin =
   | 'mod'
   | 'absV'
   | 'dot'
-export type UnaryOp = '-' | '!' | 'projX' | 'projY'
+export type UnaryOp =
+  | '-'
+  | '!'
+  | 'projX'
+  | 'projY'
+  | 'projR'
+  | 'projG'
+  | 'projB'
 export type BinaryOp =
   | '=='
   | '!='
@@ -39,22 +46,17 @@ export type BinaryOp =
 
 // Expressions
 export type Expr =
-  | ExprImport
   | ExprVar
   | ExprLit
+  | ExprVec
+  | ExprCol
   | ExprUnary
   | ExprBinary
   | ExprParen
   | ExprIf
-  | ExprVec
   | ExprBind
   | ExprCall
 
-export interface ExprImport {
-  kind: 'Expr.Import'
-  path: string
-  loc?: Loc
-}
 export interface ExprVar {
   kind: 'Expr.Var'
   variable: string
@@ -63,6 +65,19 @@ export interface ExprVar {
 export interface ExprLit {
   kind: 'Expr.Lit'
   value: any
+  loc?: Loc
+}
+export interface ExprVec {
+  kind: 'Expr.Vec'
+  x: Expr
+  y: Expr
+  loc?: Loc
+}
+export interface ExprCol {
+  kind: 'Expr.Col'
+  r: Expr
+  g: Expr
+  b: Expr
   loc?: Loc
 }
 export interface ExprUnary {
@@ -88,12 +103,6 @@ export interface ExprIf {
   condition: Expr
   thenBranch: Expr
   elseBranch: Expr
-  loc?: Loc
-}
-export interface ExprVec {
-  kind: 'Expr.Vec'
-  x: Expr
-  y: Expr
   loc?: Loc
 }
 export interface ExprBind {
@@ -137,6 +146,12 @@ export const Expr = {
     kind: 'Expr.Vec',
     x,
     y,
+  }),
+  Col: ({ r, g, b }): Expr => ({
+    kind: 'Expr.Col',
+    r,
+    g,
+    b,
   }),
   Bind: ({ variable, type = null, value, body }): Expr => ({
     kind: 'Expr.Bind',

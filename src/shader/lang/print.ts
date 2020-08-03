@@ -16,6 +16,7 @@ const printType = (type: Type) =>
   match(type, {
     'Type.Bool': () => str('bool'),
     'Type.Vec': () => str('vec2'),
+    'Type.Col': () => str('vec3'),
     'Type.Scalar': () => str('float'),
   })
 
@@ -27,12 +28,13 @@ const printExprReturn = (expr: Expr): Doc<string> =>
   match(expr, {
     'Expr.Var': () => printExprReturnInner(expr),
     'Expr.Lit': () => printExprReturnInner(expr),
+    'Expr.Vec': () => printExprReturnInner(expr),
+    'Expr.Col': () => printExprReturnInner(expr),
     'Expr.Unary': () => printExprReturnInner(expr),
     'Expr.Binary': () => printExprReturnInner(expr),
     'Expr.Call': () => printExprReturnInner(expr),
     'Expr.Paren': () => printExprReturnInner(expr),
     'Expr.If': () => printExprReturnInner(expr),
-    'Expr.Vec': () => printExprReturnInner(expr),
     'Expr.Bind': ({ variable, type, value, body }) =>
       seq(
         printType(type),
@@ -52,6 +54,10 @@ const printExpr = (expr: Expr): Doc<string> =>
   match(expr, {
     'Expr.Var': ({ variable }) => str(variable),
     'Expr.Lit': ({ value }) => str(`${litToString(value)}`),
+    'Expr.Vec': ({ x, y }) =>
+      seq(str('vec2'), parens(list([x, y].map(printExpr)))),
+    'Expr.Col': ({ r, g, b }) =>
+      seq(str('vec3'), parens(list([r, g, b].map(printExpr)))),
     'Expr.Unary': ({ op, expr }) => printUnaryExpr(op, printExpr(expr)),
     'Expr.Binary': ({ exprLeft, op, exprRight }) =>
       printBinaryExpr(op, printExpr(exprLeft), printExpr(exprRight)),
@@ -63,15 +69,6 @@ const printExpr = (expr: Expr): Doc<string> =>
         printExpr(condition),
         seq(str(' '), str('?'), str(' '), printExpr(thenBranch)),
         seq(str(' '), str(':'), str(' '), printExpr(elseBranch))
-      ),
-    'Expr.Vec': ({ x, y }) =>
-      seq(
-        str('vec2'),
-        str('('),
-        printExpr(x),
-        str(','),
-        printExpr(y),
-        str(')')
       ),
     'Expr.Bind': ({ variable, type, value, body }) =>
       seq(

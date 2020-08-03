@@ -3,7 +3,7 @@ import { Loc, down, up } from './location'
 
 export type ASTContext<T> = State<Loc, T>
 
-const sequenceM = <T>(arrM: ASTContext<T>[]): ASTContext<T[]> =>
+export const sequenceM = <T>(arrM: ASTContext<T>[]): ASTContext<T[]> =>
   arrM.reduce(
     (arrM, valM) =>
       arrM.flatMap((arr) => valM.flatMap((val) => pure([...arr, val]))),

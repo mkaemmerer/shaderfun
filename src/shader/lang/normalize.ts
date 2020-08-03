@@ -20,11 +20,13 @@ const liftDecl = (expr: Expr, k: KSingle): Expr =>
   match(expr, {
     'Expr.Var': () => k(expr),
     'Expr.Lit': () => k(expr),
+    'Expr.Vec': ({ x, y }) =>
+      liftDecls(x, y)(([x, y]) => k(Expr.Vec({ x, y }))),
+    'Expr.Col': ({ r, g, b }) =>
+      liftDecls(r, g, b)(([r, g, b]) => k(Expr.Col({ r, g, b }))),
     'Expr.Paren': ({ expr }) => liftDecl(expr, (inner) => k(Expr.Paren(inner))),
     'Expr.Unary': ({ op, expr }) =>
       liftDecl(expr, (inner) => k(Expr.Unary({ op, expr: inner }))),
-    'Expr.Vec': ({ x, y }) =>
-      liftDecls(x, y)(([x, y]) => k(Expr.Vec({ x, y }))), // prettier-ignore
     'Expr.Binary': ({ op, exprLeft, exprRight }) =>
       liftDecls(
         exprLeft,
@@ -64,12 +66,18 @@ const fixPrecedence = (expr: Expr, prec: number): Expr =>
   match(expr, {
     'Expr.Var': () => expr,
     'Expr.Lit': () => expr,
-    'Expr.Paren': ({ expr }) => Expr.Paren(fixPrecedence(expr, top)),
     'Expr.Vec': ({ x, y }) =>
       Expr.Vec({
         x: fixPrecedence(x, top),
         y: fixPrecedence(y, top),
       }),
+    'Expr.Col': ({ r, g, b }) =>
+      Expr.Col({
+        r: fixPrecedence(r, top),
+        g: fixPrecedence(g, top),
+        b: fixPrecedence(b, top),
+      }),
+    'Expr.Paren': ({ expr }) => Expr.Paren(fixPrecedence(expr, top)),
     'Expr.Unary': ({ op, expr }) => {
       const opPrec = op === '-' ? 1 : Infinity
       const inner = Expr.Unary({ op, expr: fixPrecedence(expr, top) })

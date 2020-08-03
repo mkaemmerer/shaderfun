@@ -1,24 +1,24 @@
+import match from '../../util/match'
 import { Maybe } from '../../data/maybe'
 
-export type Type = TypeArrow | TypeBool | TypeScalar | TypeVec
+export type Type = TypeArrow | TypeBool | TypeScalar | TypeVec | TypeCol
 
 export interface TypeArrow {
   kind: 'Type.Arrow'
   input: Type[]
   output: Type
-  toString: () => string
-}
-export interface TypeVec {
-  kind: 'Type.Vec'
-  toString: () => string
 }
 export interface TypeScalar {
   kind: 'Type.Scalar'
-  toString: () => string
+}
+export interface TypeVec {
+  kind: 'Type.Vec'
+}
+export interface TypeCol {
+  kind: 'Type.Col'
 }
 export interface TypeBool {
   kind: 'Type.Bool'
-  toString: () => string
 }
 
 export const Type = {
@@ -26,28 +26,11 @@ export const Type = {
     kind: 'Type.Arrow',
     input,
     output,
-    toString() {
-      return `${this.input} -> ${this.output}`
-    },
   }),
-  Vec: {
-    kind: 'Type.Vec',
-    toString() {
-      return 'Vec'
-    },
-  } as Type,
-  Scalar: {
-    kind: 'Type.Scalar',
-    toString() {
-      return 'Scalar'
-    },
-  } as Type,
-  Bool: {
-    kind: 'Type.Bool',
-    toString() {
-      return 'Bool'
-    },
-  } as Type,
+  Scalar: { kind: 'Type.Scalar' } as Type,
+  Vec: { kind: 'Type.Vec' } as Type,
+  Col: { kind: 'Type.Col' } as Type,
+  Bool: { kind: 'Type.Bool' } as Type,
 }
 
 export const literalType = (lit: any): Type => {
@@ -58,6 +41,16 @@ export const literalType = (lit: any): Type => {
       return Type.Bool
   }
 }
+
+export const printType = (t: Type) =>
+  match(t, {
+    'Type.Arrow': ({ input, output }) =>
+      `(${input.map(printType).join(', ')}) -> ${printType(output)}`,
+    'Type.Scalar': () => 'Scalar',
+    'Type.Vec': () => 'Vec',
+    'Type.Col': () => 'Col',
+    'Type.Bool': () => 'Bool',
+  })
 
 export const isArrow = (t: Type): t is TypeArrow => t.kind === 'Type.Arrow'
 

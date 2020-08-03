@@ -37,6 +37,10 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
   match(expr, {
     'Expr.Var': ({ variable }) => lookupVar(variable),
     'Expr.Lit': ({ value }) => pure(literalType(value)),
+    'Expr.Vec': ({ x, y }) =>
+      sequenceM([x, y].map(checkExpr(Type.Scalar))).map(() => Type.Vec),
+    'Expr.Col': ({ r, g, b }) =>
+      sequenceM([r, g, b].map(checkExpr(Type.Scalar))).map(() => Type.Col),
     'Expr.Unary': ({ expr, op }) => {
       const checkUnary = (typeIn: Type, typeResult: Type) =>
         checkExpr(typeIn)(expr).map(() => typeResult)
@@ -48,6 +52,11 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         case 'projX': // fall-through
         case 'projY':
           return checkUnary(Type.Vec, Type.Scalar)
+        // Color -> Scalar
+        case 'projR': // fall-through
+        case 'projG': // fall-through
+        case 'projB':
+          return checkUnary(Type.Col, Type.Scalar)
         // Bool -> Bool
         case '!':
           return checkUnary(Type.Bool, Type.Bool)
@@ -109,10 +118,6 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         .flatMap(() =>
           synthUnify([synthExpr(thenBranch), synthExpr(elseBranch)])
         ),
-    'Expr.Vec': ({ x, y }) =>
-      sequenceM([checkExpr(Type.Scalar)(x), checkExpr(Type.Scalar)(y)]).map(
-        () => Type.Vec
-      ),
     'Expr.Bind': ({ variable, type, value, body }) =>
       scoped(
         (type == null ? synthExpr(value) : checkExpr(type)(value))
@@ -134,10 +139,11 @@ const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
     match(expr, {
       'Expr.Var': ({ variable }) => unifyVar(variable, type),
       'Expr.Lit':    () => checkExprInner(type)(expr), // prettier-ignore
+      'Expr.Vec':    () => checkExprInner(type)(expr), // prettier-ignore
+      'Expr.Col':    () => checkExprInner(type)(expr), // prettier-ignore
       'Expr.Unary':  () => checkExprInner(type)(expr), // prettier-ignore
       'Expr.Binary': () => checkExprInner(type)(expr), // prettier-ignore
       'Expr.Call':   () => checkExprInner(type)(expr), // prettier-ignore
-      'Expr.Vec':    () => checkExprInner(type)(expr), // prettier-ignore
       // Pass expectation forward to inner expression
       'Expr.Paren': ({ expr: exprBody }) => checkExpr(type)(exprBody),
       // Pass expectation forward through branches
@@ -167,6 +173,12 @@ const populateExpr = (expr: Expr): TypeChecker<Expr> =>
   match(expr, {
     'Expr.Var': () => pure(expr),
     'Expr.Lit': () => pure(expr),
+    'Expr.Vec': ({ x, y }) =>
+      sequenceM([x, y].map(populateExpr)).map(([x, y]) => Expr.Vec({ x, y })),
+    'Expr.Col': ({ r, g, b }) =>
+      sequenceM([r, g, b].map(populateExpr)).map(([r, g, b]) =>
+        Expr.Col({ r, g, b })
+      ),
     'Expr.Unary': ({ op, expr }) =>
       populateExpr(expr).map((expr) => Expr.Unary({ op, expr })),
     'Expr.Binary': ({ op, exprLeft, exprRight }) =>
@@ -178,10 +190,6 @@ const populateExpr = (expr: Expr): TypeChecker<Expr> =>
       ),
     'Expr.Call': ({ fn, args }) =>
       sequenceM(args.map(populateExpr)).map((args) => Expr.Call({ fn, args })),
-    'Expr.Vec': ({ x, y }) =>
-      sequenceM([populateExpr(x), populateExpr(y)]).map(([x, y]) =>
-        Expr.Vec({ x, y })
-      ),
     'Expr.Paren': ({ expr }) =>
       populateExpr(expr).map((expr) => Expr.Paren(expr)),
     'Expr.If': ({ condition, thenBranch, elseBranch }) =>

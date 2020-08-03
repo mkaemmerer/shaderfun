@@ -1,4 +1,4 @@
-import { Type, unify, TypeArrow, isArrow } from './types'
+import { Type, unify, TypeArrow, isArrow, printType } from './types'
 import { TryState } from '../../monad/try-state'
 import { bestMatches } from '../../util/edit-distance'
 import {
@@ -34,7 +34,9 @@ export const typeMismatch = <T>(
   expectedType: Type,
   actualType: Type
 ): TypeChecker<T> =>
-  fail(`Expected type ${expectedType}, but found ${actualType}`)
+  fail(
+    `Expected type ${printType(expectedType)}, but found ${printType(actualType)}` // prettier-ignore
+  )
 
 export const variableNotDefined = <T>(variable: string): TypeChecker<T> =>
   TryState.get<TypeContext>()
