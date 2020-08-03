@@ -31,6 +31,7 @@ export const cos = call('cos')
 export const log = call('log')
 export const sqrt = call('sqrt')
 export const saturate = call('saturate')
+export const smoothstep = call('smoothstep')
 
 export const plus = binary('+')
 export const minus = binary('-')

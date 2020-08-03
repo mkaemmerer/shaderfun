@@ -2,6 +2,10 @@ export const drawGL = (
   gl: WebGLRenderingContext,
   shaderProgram: WebGLProgram
 ) => {
+  const canvas = gl.canvas as HTMLCanvasElement
+  canvas.width = canvas.clientWidth * devicePixelRatio
+  canvas.height = canvas.clientHeight * devicePixelRatio
+
   // Prepare viewport
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height)
   gl.clearColor(0, 0, 0, 0)

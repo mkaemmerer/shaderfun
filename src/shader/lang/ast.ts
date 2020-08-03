@@ -6,6 +6,7 @@ export type Builtin =
   | 'abs'
   | 'floor'
   | 'fract'
+  | 'smoothstep'
   | 'sin'
   | 'cos'
   | 'log'

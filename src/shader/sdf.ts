@@ -34,7 +34,7 @@ import {
   or,
   not,
 } from './built-ins'
-import { Program, composeM } from './program'
+import { Program } from './program'
 
 const TAU = Math.PI * 2
 
@@ -50,7 +50,9 @@ const overDomain = (f: (p: Expr) => Shader<Expr>): SDFTransform => (
   sdf: SDF
 ) => (p) => f(p).flatMap(decl).flatMap(sdf)
 
-const overRange = composeM
+const overRange = (f: (p: Expr) => Shader<Expr>): SDFTransform => (
+  sdf: SDF
+) => (p) => sdf(p).flatMap(decl).flatMap(f)
 
 const clamp = (expr: Expr, lo: Expr, hi: Expr): Expr => max(min(expr, hi), lo)
 const conj = (...conds: Expr[]) => conds.reduce(and)

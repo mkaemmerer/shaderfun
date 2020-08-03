@@ -232,6 +232,8 @@ const defineBuiltins = sequenceM([
   defineFunc('mod',  [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('atan', [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('length', [Type.Vec], Type.Scalar),
+  // (Scalar, Scalar, Scalar) -> Scalar
+  defineFunc('smoothstep', [Type.Scalar, Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
   // Vec -> Vec
   defineFunc('absV', [Type.Vec], Type.Vec),
   // (Vec, Vec) -> Scalar
