@@ -219,6 +219,8 @@ const defineBuiltins = sequenceM([
   defineVar('p', Type.Vec),
   // Scalar -> Scalar
   defineFunc('abs',      [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('floor',    [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('fract',    [Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('sin',      [Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('cos',      [Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('log',      [Type.Scalar], Type.Scalar), // prettier-ignore
@@ -234,6 +236,8 @@ const defineBuiltins = sequenceM([
   defineFunc('absV', [Type.Vec], Type.Vec),
   // (Vec, Vec) -> Scalar
   defineFunc('dot', [Type.Vec, Type.Vec], Type.Scalar),
+  // (Color, Color, Scalar) -> Color
+  defineFunc('mix', [Type.Col, Type.Col, Type.Scalar], Type.Col),
 ])
 
 export const typeCheck = (expr: Expr): Expr =>

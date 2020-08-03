@@ -1,5 +1,14 @@
 import match from '../../util/match'
-import { layout, str, seq, newline, Doc, intersperse } from '../../data/doc'
+import {
+  layout,
+  str,
+  seq,
+  newline,
+  concat,
+  indent,
+  Doc,
+  intersperse,
+} from '../../data/doc'
 import { Expr, UnaryOp, BinaryOp } from './ast'
 import { Type } from './types'
 
@@ -10,6 +19,8 @@ const litToString = (x: any) => {
 
 const parens = (doc: Doc<string>) => seq(str('('), doc, str(')'))
 const list = (docs: Doc<string>[]) => intersperse(docs, str(','))
+const indentBlock = (doc: Doc<string>): Doc<string> =>
+  indent(concat(newline as Doc<string>, doc))
 
 // Types
 const printType = (type: Type) =>
@@ -67,8 +78,8 @@ const printExpr = (expr: Expr): Doc<string> =>
     'Expr.If': ({ condition, thenBranch, elseBranch }) =>
       seq(
         printExpr(condition),
-        seq(str(' '), str('?'), str(' '), printExpr(thenBranch)),
-        seq(str(' '), str(':'), str(' '), printExpr(elseBranch))
+        indentBlock(seq(str('?'), str(' '), parens(printExpr(thenBranch)))),
+        indentBlock(seq(str(':'), str(' '), parens(printExpr(elseBranch))))
       ),
     'Expr.Bind': ({ variable, type, value, body }) =>
       seq(

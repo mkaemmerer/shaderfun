@@ -4,6 +4,8 @@ import { Type } from './types'
 export type Builtin =
   | 'length'
   | 'abs'
+  | 'floor'
+  | 'fract'
   | 'sin'
   | 'cos'
   | 'log'
@@ -15,6 +17,7 @@ export type Builtin =
   | 'mod'
   | 'absV'
   | 'dot'
+  | 'mix'
 export type UnaryOp =
   | '-'
   | '!'

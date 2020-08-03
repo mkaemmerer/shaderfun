@@ -1,12 +1,10 @@
 import { compileShader } from './gl/compile'
 import { drawGL } from './gl/draw'
 import { Expr, print, normalize } from './lang'
-import { Shader, run } from './shader'
-
-export type Program = (e: Expr) => Shader<Expr>
+import { Program, run } from './program'
 
 const buildShader = (program: Program) => {
-  const result: Expr = run(program(Expr.Var('p')))
+  const result: Expr = run(program)
   const normalized = normalize(result)
   return print(normalized)
 }

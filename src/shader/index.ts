@@ -1,3 +1,4 @@
 export * from './sdf'
 export * from './color'
-export { Program, drawShader } from './draw'
+export * from './program'
+export { drawShader } from './draw'

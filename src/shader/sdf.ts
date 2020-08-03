@@ -34,16 +34,23 @@ import {
   or,
   not,
 } from './built-ins'
+import { Program, composeM } from './program'
 
 const TAU = Math.PI * 2
 
-export type SDF = (e: Expr) => Shader<Expr>
+export type SDF = Program
 export type SDFTransform = (sdf: SDF) => SDF
 
 // Utils
 const cast = (v: V2): Expr => vec({ x: lit(v.x), y: lit(v.y) })
 const id = <T>(x: T): T => x
 const compose2 = <A, B, C>(f: (b: B) => C, g: (a: A) => B) => (x: A) => f(g(x))
+
+const overDomain = (f: (p: Expr) => Shader<Expr>): SDFTransform => (
+  sdf: SDF
+) => (p) => f(p).flatMap(decl).flatMap(sdf)
+
+const overRange = composeM
 
 const clamp = (expr: Expr, lo: Expr, hi: Expr): Expr => max(min(expr, hi), lo)
 const conj = (...conds: Expr[]) => conds.reduce(and)
@@ -59,14 +66,6 @@ const projectSegment = (a: Expr, b: Expr) => (p: Expr) =>
     const fac = yield decl(saturate(div(dot(pa, ba), dot(ba, ba))))
     return pure(plusV(a, timesV(fac, ba)))
   })
-
-const overDomain = (f: (p: Expr) => Shader<Expr>): SDFTransform => (
-  sdf: SDF
-) => (p) => f(p).flatMap(decl).flatMap(sdf)
-
-const overRange = (f: (s: Expr) => Shader<Expr>): SDFTransform => (
-  sdf: SDF
-) => (p) => sdf(p).flatMap(decl).flatMap(f)
 
 // Geometry
 export const point: SDF = (p) => pure(length(p))
@@ -208,7 +207,8 @@ export const repeatPolar = (count: S): SDFTransform =>
       const a = yield decl(plus(atan(projY(p), projX(p)), lit(halfAngle)))
       const r = yield decl(length(p))
       const theta = yield decl(minus(mod(a, lit(angle)), lit(halfAngle)))
-      return pure(timesV(r, vec({ x: cos(theta), y: sin(theta) })))
+      const d = yield decl(timesV(r, vec({ x: cos(theta), y: sin(theta) })))
+      return pure(d)
     })
   )
 
