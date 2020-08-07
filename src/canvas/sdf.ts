@@ -1,4 +1,12 @@
-import { V2, S, length, minus, times, dot, plus } from '../util/vector'
+import {
+  V2,
+  S,
+  length,
+  minus as minusV,
+  times as timesV,
+  plus as plusV,
+  dot,
+} from '../util/vector'
 
 export type SDF = (p: V2) => S
 
@@ -13,7 +21,7 @@ const sqrt = Math.sqrt
 const log = Math.log
 const mod = (x: number, b: number) => ((x % b) + b) % b
 
-const abs2 = (v: V2): V2 => ({ x: Math.abs(v.x), y: Math.abs(v.y) })
+const absV = (v: V2): V2 => ({ x: abs(v.x), y: abs(v.y) })
 const clamp = (lo: S, hi: S) => (s: S) => max(min(s, hi), lo)
 const saturate = clamp(0, 1)
 
@@ -21,10 +29,10 @@ const segments = <T>(arr: T[]): [T, T][] =>
   arr.map((x, i) => [i == 0 ? arr[arr.length - 1] : arr[i - 1], x])
 
 const projectSegment = (a: V2, b: V2) => (p: V2) => {
-  const pa = minus(p, a)
-  const ba = minus(b, a)
+  const pa = minusV(p, a)
+  const ba = minusV(b, a)
   const fac = saturate(dot(pa, ba) / dot(ba, ba))
-  return plus(a, times(fac, ba))
+  return plusV(a, timesV(fac, ba))
 }
 
 // Geometry
@@ -33,25 +41,25 @@ export const point: SDF = (p: V2) => length(p)
 export const circle = (r: S): SDF => (p) => length(p) - r
 
 export const box = (corner: V2): SDF => (p) => {
-  const d = minus(abs2(p), corner)
+  const d = minusV(absV(p), corner)
   const c = { x: max(d.x, 0), y: max(d.y, 0) }
   return length(c) + min(max(d.x, d.y), 0)
 }
 
 export const segment = (a: V2, b: V2): SDF => (p) => {
   const c = projectSegment(a, b)(p)
-  return length(minus(p, c))
+  return length(minusV(p, c))
 }
 
 export const polygon = (v: V2[]): SDF => (p) => {
-  const pv = minus(p, v[0])
+  const pv = minusV(p, v[0])
   let d = dot(pv, pv)
 
   let sign = 1
   for (const [a, b] of segments(v)) {
-    const e = minus(a, b)
-    const w = minus(p, b)
-    const c = minus(p, projectSegment(a, b)(p))
+    const e = minusV(a, b)
+    const w = minusV(p, b)
+    const c = minusV(p, projectSegment(a, b)(p))
     d = min(d, dot(c, c))
 
     // Flip sign if we crossed an edge
@@ -81,7 +89,8 @@ const overDomain = (f: (p: V2) => V2): SDFTransform => (sdf) => (p) => sdf(f(p))
 const overRange = (f: (s: S) => S): SDFTransform => (sdf) => (p) => f(sdf(p))
 
 // Rigidbody
-export const translate = (v: V2): SDFTransform => overDomain((p) => minus(p, v))
+export const translate = (v: V2): SDFTransform =>
+  overDomain((p) => minusV(p, v))
 
 export const rotate = (angle: S): SDFTransform =>
   overDomain((p) => {
@@ -91,7 +100,7 @@ export const rotate = (angle: S): SDFTransform =>
   })
 
 export const scale = (s: S): SDFTransform => (sdf) => (p) =>
-  sdf(times(1 / s, p)) * s
+  sdf(timesV(1 / s, p)) * s
 
 // Domain repetition
 export const mirrorX = overDomain((p) => ({ x: abs(p.x), y: p.y }))
@@ -120,7 +129,7 @@ export const repeatPolar = (count: S): SDFTransform =>
     const a = atan(p.y, p.x) + halfAngle
     const r = length(p)
     const theta = mod(a, angle) - halfAngle
-    return times(r, { x: cos(theta), y: sin(theta) })
+    return timesV(r, { x: cos(theta), y: sin(theta) })
   })
 
 // Domain repetition extras
@@ -133,7 +142,7 @@ export const repeatLogPolar = (count: S): SDFTransform => (sdf) => (p) => {
   }
   // Scale everything so tiles will fit nicely in the [-pi,pi] interval
   const scale = count / TAU
-  const scaled = times(scale, pos)
+  const scaled = timesV(scale, pos)
   const repeated = {
     x: mod(scaled.x + 0.5, 1) - 0.5,
     y: mod(scaled.y + 0.5, 1) - 0.5,
@@ -149,7 +158,7 @@ export const outline = (fac: S) => overRange((r) => abs(r) - fac)
 export const invert = overRange((r: S) => -r)
 
 export const extrudeX = (fac: S) =>
-  overDomain((p) => minus(p, { x: clamp(-fac, fac)(p.x), y: 0 }))
+  overDomain((p) => minusV(p, { x: clamp(-fac, fac)(p.x), y: 0 }))
 
 export const extrudeY = (fac: S) =>
-  overDomain((p) => minus(p, { x: 0, y: clamp(-fac, fac)(p.y) }))
+  overDomain((p) => minusV(p, { x: 0, y: clamp(-fac, fac)(p.y) }))

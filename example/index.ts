@@ -1,5 +1,5 @@
 import { drawShader } from '../src'
-import { program } from './log-polar'
+import { program } from './taxicab-poly'
 
 const canvas = document.querySelector('canvas') as HTMLCanvasElement
 const gl = canvas.getContext('webgl')
