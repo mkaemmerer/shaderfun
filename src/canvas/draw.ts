@@ -1,5 +1,5 @@
 import { SDF } from './sdf'
-import { ColorRGB, black, white, grayscale, mix } from '../util/color'
+import { colorRamp } from './color'
 
 const bufferCanvas = document.createElement('canvas')
 const bufferCtx = bufferCanvas.getContext('2d')
@@ -23,27 +23,6 @@ const makeImage = (width: number, height: number, f) => {
 const drawImage = (ctx: CanvasRenderingContext2D, image: ImageData) => {
   bufferCtx.putImageData(image, 0, 0)
   ctx.drawImage(bufferCanvas, 0, 0)
-}
-
-const darkGray = grayscale(40)
-const midGray = grayscale(60)
-const lightGray = grayscale(240)
-
-const eps = 2
-const stripeWidth = 10
-const colorRamp = (dist: number): ColorRGB => {
-  if (Math.abs(dist) < eps) {
-    const blend = Math.abs(dist - eps) < 1
-    const fac = Math.abs(dist - Math.trunc(dist))
-    const target = dist > 0 ? white : darkGray
-    return blend ? mix(black, target)(fac) : black
-  }
-  if (dist <= -eps) {
-    return Math.floor(dist / stripeWidth) % 2 == 0 ? midGray : darkGray
-  }
-  if (dist >= eps) {
-    return Math.floor(dist / stripeWidth) % 2 == 0 ? white : lightGray
-  }
 }
 
 export const drawSDF = (sdf: SDF) => (ctx: CanvasRenderingContext2D) => {
