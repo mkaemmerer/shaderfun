@@ -48,6 +48,8 @@ const liftDecl = (expr: Expr, k: KSingle): Expr =>
 
 const precedenceTable = [
   [],
+  ['unaryNegate'],
+  ['projX', 'projY', 'projR', 'projG', 'projB'],
   ['*', '/'],
   ['*>'],
   ['+', '-'],
@@ -79,8 +81,8 @@ const fixPrecedence = (expr: Expr, prec: number): Expr =>
       }),
     'Expr.Paren': ({ expr }) => Expr.Paren(fixPrecedence(expr, top)),
     'Expr.Unary': ({ op, expr }) => {
-      const opPrec = op === '-' ? 1 : Infinity
-      const inner = Expr.Unary({ op, expr: fixPrecedence(expr, top) })
+      const opPrec = opPrecedence(op === '-' ? 'unaryNegate' : op)
+      const inner = Expr.Unary({ op, expr: fixPrecedence(expr, opPrec) })
       return opPrec >= prec ? Expr.Paren(inner) : inner
     },
     'Expr.Binary': ({ op, exprLeft, exprRight }) => {
