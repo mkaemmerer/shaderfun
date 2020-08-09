@@ -138,9 +138,9 @@ const tSegmentDist = (a: Expr, b: Expr) => (p: Expr) =>
     const ba = yield decl(minusV(b, a))
     const facX = yield decl(saturate(div(projX(pa), projX(ba))))
     const facY = yield decl(saturate(div(projY(pa), projY(ba))))
-    const p1 = yield decl(plusV(a, timesV(facX, ba)))
-    const p2 = yield decl(plusV(a, timesV(facY, ba)))
-    return pure(min(length_l1(minusV(p, p1)), length_l1(minusV(p, p2))))
+    const p1 = yield decl(minusV(pa, timesV(facX, ba)))
+    const p2 = yield decl(minusV(pa, timesV(facY, ba)))
+    return pure(min(length_l1(p1), length_l1(p2)))
   })
 
 export const tCircle = (r: S): SDF => (p) => pure(minus(length_l1(p), lit(r)))
@@ -207,9 +207,9 @@ const cSegmentDist = (a: Expr, b: Expr) => (p: Expr) =>
     const fac2 = yield decl(
       saturate(div(plus(projY(pa), projX(pa)), plus(projY(ba), projX(ba))))
     )
-    const p1 = yield decl(plusV(a, timesV(fac1, ba)))
-    const p2 = yield decl(plusV(a, timesV(fac2, ba)))
-    return pure(min(length_lInf(minusV(p, p1)), length_lInf(minusV(p, p2))))
+    const p1 = yield decl(minusV(pa, timesV(fac1, ba)))
+    const p2 = yield decl(minusV(pa, timesV(fac2, ba)))
+    return pure(min(length_lInf(p1), length_lInf(p2)))
   })
 
 export const cCircle = (r: S): SDF => (p) => pure(minus(length_lInf(p), lit(r)))
