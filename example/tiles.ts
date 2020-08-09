@@ -7,8 +7,8 @@ import {
   times,
   minus,
   projX,
-} from '../src/shader/built-ins'
-import { Do, pure } from '../src/shader/shader'
+} from '../src/lang/built-ins'
+import { Do, pure } from '../src/lang/ast-builder'
 
 const tiles: SDF = repeatGrid(200, 200)(tCircle(0))
 

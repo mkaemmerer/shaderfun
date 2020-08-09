@@ -1,4 +1,4 @@
-import match from '../../util/match'
+import match from '../util/match'
 import {
   layout,
   str,
@@ -8,7 +8,7 @@ import {
   indent,
   Doc,
   intersperse,
-} from '../../data/doc'
+} from '../data/doc'
 import { Expr, UnaryOp, BinaryOp } from './ast'
 import { Type } from './types'
 

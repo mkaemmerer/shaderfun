@@ -1,6 +1,6 @@
 import { Type, unify, TypeArrow, isArrow, printType } from './types'
-import { TryState } from '../../monad/try-state'
-import { bestMatches } from '../../util/edit-distance'
+import { TryState } from '../monad/try-state'
+import { bestMatches } from '../util/edit-distance'
 import {
   TypeContext,
   defineVar as defineVarContext,

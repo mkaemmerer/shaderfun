@@ -1,4 +1,4 @@
-import match from '../../util/match'
+import match from '../util/match'
 import { empty } from './location'
 import {
   readLocation,

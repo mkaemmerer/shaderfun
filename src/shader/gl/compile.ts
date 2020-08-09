@@ -36,6 +36,6 @@ export const compileShader = (source: string, gl: WebGLRenderingContext) => {
       gl_FragColor = vec4(res.rgb, 1.);
     }
   `
-  console.log(fragmentShaderSource)
+
   return glInitShader(gl, { vertexShaderSource, fragmentShaderSource })
 }

@@ -10,7 +10,7 @@ export const grayscale = (brightness: number): ColorRGB => ({
 })
 
 const lerp = (a: number, b: number) => (fac: number): number =>
-  a + (b - a) * fac
+  a + fac * (b - a)
 
 export const mix = (c1: ColorRGB, c2: ColorRGB) => (fac: number): ColorRGB => ({
   r: lerp(c1.r, c2.r)(fac),

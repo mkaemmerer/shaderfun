@@ -1,4 +1,4 @@
-import { Maybe } from '../../data/maybe'
+import { Maybe } from '../data/maybe'
 
 export interface BindingContext<T> {
   [variable: string]: T

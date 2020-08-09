@@ -1,16 +1,16 @@
 import { State } from '../monad/state'
-import { Expr } from './lang'
+import { Expr } from './ast'
+
+const id = <T>(x: T): T => x
 
 type Var = string
 type K = (expr: Expr) => Expr
-type ShaderState = { count: number; cont: K }
+type BuilderState = { count: number; cont: K }
+export type AstBuilder<T> = State<BuilderState, T>
 
-const id = <T>(x: T): T => x
-export const emptyState = { count: 0, cont: id }
+const emptyState = { count: 0, cont: id }
 
-export type Shader<T> = State<ShaderState, T>
-
-export const sequenceM = <T>(arrM: Shader<T>[]): Shader<T[]> =>
+export const sequenceM = <T>(arrM: AstBuilder<T>[]): AstBuilder<T[]> =>
   arrM.reduce(
     (arrM, valM) =>
       arrM.flatMap((arr) => valM.flatMap((val) => pure([...arr, val]))),
@@ -18,18 +18,18 @@ export const sequenceM = <T>(arrM: Shader<T>[]): Shader<T[]> =>
   )
 
 // Action creators
-export const empty: Shader<any> = State.of(null)
+export const empty: AstBuilder<any> = State.of(null)
 
-export const pure = <T>(v: T): Shader<T> => State.of(v)
+export const pure = <T>(v: T): AstBuilder<T> => State.of(v)
 
-const newVar = (): Shader<Var> =>
-  State.get<ShaderState>().flatMap(({ count, cont }) =>
+const newVar = (): AstBuilder<Var> =>
+  State.get<BuilderState>().flatMap(({ count, cont }) =>
     State.set({ count: count + 1, cont }).map(() => `var_${count}`)
   )
 
-export const decl = (expr: Expr): Shader<Expr> =>
+export const decl = (expr: Expr): AstBuilder<Expr> =>
   newVar().flatMap((v) =>
-    State.get<ShaderState>()
+    State.get<BuilderState>()
       .flatMap(({ count, cont }) => {
         const newCont: K = (body: Expr) =>
           cont(
@@ -44,7 +44,7 @@ export const decl = (expr: Expr): Shader<Expr> =>
       .flatMap(() => pure(Expr.Var(v)))
   )
 
-export const run = (ctx: Shader<Expr>): Expr => {
+export const run = (ctx: AstBuilder<Expr>): Expr => {
   const [{ cont }, expr] = ctx.run(emptyState)
   return cont(expr)
 }
@@ -59,7 +59,7 @@ const cached = (f) => {
   }
 }
 
-export const Do = (gen): Shader<any> => {
+export const Do = (gen): AstBuilder<any> => {
   const g = gen()
   const step = (data) => {
     const { done, value } = g.next(data)

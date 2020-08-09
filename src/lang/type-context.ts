@@ -1,4 +1,4 @@
-import { Maybe } from '../../data/maybe'
+import { Maybe } from '../data/maybe'
 import {
   BindingContext,
   empty as emptyBindings,

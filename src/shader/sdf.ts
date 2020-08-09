@@ -1,6 +1,6 @@
 import { V2, S } from '../util/vector'
-import { Expr } from './lang'
-import { Shader, pure, decl, sequenceM, Do } from './shader'
+import { Expr, Program, Transform, overDomain, overRange } from '../lang'
+import { pure, decl, Do } from '../lang/ast-builder'
 import {
   abs,
   absV,
@@ -33,26 +33,16 @@ import {
   and,
   or,
   not,
-} from './built-ins'
-import { Program } from './program'
+} from '../lang/built-ins'
 
 const TAU = Math.PI * 2
 
 export type SDF = Program
-export type SDFTransform = (sdf: SDF) => SDF
 
 // Utils
 const cast = (v: V2): Expr => vec({ x: lit(v.x), y: lit(v.y) })
 const id = <T>(x: T): T => x
 const compose2 = <A, B, C>(f: (b: B) => C, g: (a: A) => B) => (x: A) => f(g(x))
-
-const overDomain = (f: (p: Expr) => Shader<Expr>): SDFTransform => (
-  sdf: SDF
-) => (p) => f(p).flatMap(decl).flatMap(sdf)
-
-const overRange = (f: (p: Expr) => Shader<Expr>): SDFTransform => (
-  sdf: SDF
-) => (p) => sdf(p).flatMap(decl).flatMap(f)
 
 const clamp = (expr: Expr, lo: Expr, hi: Expr): Expr => max(min(expr, hi), lo)
 const conj = (...conds: Expr[]) => conds.reduce(and)
@@ -264,26 +254,27 @@ export const cPolygon = (v: V2[]): SDF => (p) =>
 
 // Operators
 // NB: these break the distance field
-export const union = (s1: SDF, s2: SDF): SDF => (p) =>
-  sequenceM([s1(p).flatMap(decl), s2(p).flatMap(decl)]).map(([d1, d2]) =>
-    min(d1, d2)
-  )
+const combineSDF = (f: (d1: Expr, d2: Expr) => Expr) => (
+  s1: SDF,
+  s2: SDF
+): SDF => (p) =>
+  Do(function* () {
+    const d1 = yield decl(yield s1(p))
+    const d2 = yield decl(yield s2(p))
+    return pure(f(d1, d2))
+  })
 
-export const intersection = (s1: SDF, s2: SDF): SDF => (p) =>
-  sequenceM([s1(p).flatMap(decl), s2(p).flatMap(decl)]).map(([d1, d2]) =>
-    max(d1, d2)
-  )
+export const union = combineSDF((d1, d2) => min(d1, d2))
 
-export const difference = (s1: SDF, s2: SDF): SDF => (p) =>
-  sequenceM([s1(p).flatMap(decl), s2(p).flatMap(decl)]).map(([d1, d2]) =>
-    max(d1, negate(d2))
-  )
+export const intersection = combineSDF((d1, d2) => max(d1, d2))
+
+export const difference = combineSDF((d1, d2) => max(d1, negate(d2)))
 
 // Rigidbody
-export const translate = (v: V2): SDFTransform =>
+export const translate = (v: V2): Transform =>
   overDomain((p) => pure(minusV(p, cast(v))))
 
-export const rotate = (angle: S): SDFTransform =>
+export const rotate = (angle: S): Transform =>
   overDomain((p) =>
     Do(function* () {
       const cosa = yield decl(cos(lit(angle)))
@@ -299,7 +290,7 @@ export const rotate = (angle: S): SDFTransform =>
     })
   )
 
-export const scale = (s: S): SDFTransform => (sdf) => (p) =>
+export const scale = (s: S): Transform => (sdf) => (p) =>
   sdf(timesV(lit(1 / s), p)).map((p) => times(p, lit(s)))
 
 // Domain repetition
@@ -336,7 +327,7 @@ export const repeatY = (cellSize: S) =>
 export const repeatGrid = (sizeX: S, sizeY: S = sizeX) =>
   compose(repeatX(sizeX), repeatY(sizeY))
 
-export const repeatPolar = (count: S): SDFTransform =>
+export const repeatPolar = (count: S): Transform =>
   overDomain((p) =>
     Do(function* () {
       const angle = TAU / count
@@ -350,7 +341,7 @@ export const repeatPolar = (count: S): SDFTransform =>
   )
 
 // Domain repetition extras
-export const repeatLogPolar = (count: S): SDFTransform => (sdf) => (p) =>
+export const repeatLogPolar = (count: S): Transform => (sdf) => (p) =>
   Do(function* () {
     const r = yield decl(length(p))
     // Apply the forward log-polar map

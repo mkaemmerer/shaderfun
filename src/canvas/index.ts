@@ -1,2 +1,3 @@
 export * from './sdf'
-export { drawSDF } from './draw'
+export * from './color'
+export { drawCanvas } from './draw'

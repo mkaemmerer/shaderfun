@@ -1,6 +1,5 @@
 export { Expr, UnaryOp, BinaryOp, Builtin } from './ast'
-export { Type } from './types'
+export { Program, Transform, composeM, overDomain, overRange } from './program'
 export { tagLocation } from './tag-location'
 export { typeCheck } from './type-check'
-export { print } from './print'
-export { normalize } from './normalize'
+export { compile } from './compile'

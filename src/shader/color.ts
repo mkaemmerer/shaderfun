@@ -1,6 +1,6 @@
 import { S } from '../util/vector'
-import { Expr } from './lang'
-import { Shader, pure, Do, decl } from './shader'
+import { Expr, Program } from '../lang'
+import { pure, Do, decl } from '../lang/ast-builder'
 import {
   lit,
   if$,
@@ -14,7 +14,7 @@ import {
   eq,
   smoothstep,
   mix,
-} from './built-ins'
+} from '../lang/built-ins'
 
 const EPSILON = lit(2)
 const STRIPE_WIDTH = lit(10)
@@ -29,7 +29,7 @@ const lightGray = grayscale(0.95)
 const white = grayscale(1)
 
 // Scalar -> Color
-export type ColorRamp = (e: Expr) => Shader<Expr>
+export type ColorRamp = Program
 
 export const signRamp: ColorRamp = (d) => pure(if$(gt(d, lit(0)), white, black))
 

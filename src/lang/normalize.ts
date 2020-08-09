@@ -1,4 +1,4 @@
-import match from '../../util/match'
+import match from '../util/match'
 import { Expr } from './ast'
 import { tagLocation } from './tag-location'
 import { typeCheck } from './type-check'

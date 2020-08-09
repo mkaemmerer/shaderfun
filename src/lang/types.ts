@@ -1,5 +1,5 @@
-import match from '../../util/match'
-import { Maybe } from '../../data/maybe'
+import match from '../util/match'
+import { Maybe } from '../data/maybe'
 
 export type Type = TypeArrow | TypeBool | TypeScalar | TypeVec | TypeCol
 

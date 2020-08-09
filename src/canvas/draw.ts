@@ -1,10 +1,12 @@
-import { SDF } from './sdf'
-import { colorRamp } from './color'
+import { V2 } from '../util/vector'
+import { ColorRGB } from '../util/color'
+
+type Program = (p: V2) => ColorRGB
 
 const bufferCanvas = document.createElement('canvas')
 const bufferCtx = bufferCanvas.getContext('2d')
 
-const makeImage = (width: number, height: number, f) => {
+const makeImage = (width: number, height: number, f: Program) => {
   bufferCanvas.width = width
   bufferCanvas.height = height
   const image = bufferCtx.createImageData(width, height)
@@ -25,12 +27,21 @@ const drawImage = (ctx: CanvasRenderingContext2D, image: ImageData) => {
   ctx.drawImage(bufferCanvas, 0, 0)
 }
 
-export const drawSDF = (sdf: SDF) => (ctx: CanvasRenderingContext2D) => {
-  const { width, height } = ctx.canvas
+export const drawCanvas = (program: Program) => (
+  ctx: CanvasRenderingContext2D
+) => {
+  const canvas = ctx.canvas
+  canvas.width = canvas.clientWidth * devicePixelRatio
+  canvas.height = canvas.clientHeight * devicePixelRatio
+  const { width, height } = canvas
 
   const image = makeImage(width, height, ({ x, y }) => {
-    const dist = sdf({ x: x - width / 2, y: y - height / 2 })
-    return colorRamp(dist)
+    const color = program({ x: x - width / 2, y: y - height / 2 })
+    return {
+      r: color.r * 255,
+      g: color.g * 255,
+      b: color.b * 255,
+    }
   })
 
   drawImage(ctx, image)

@@ -1,4 +1,4 @@
-import match from '../../util/match'
+import match from '../util/match'
 import { Expr } from './ast'
 import { Type, literalType, unifyAll } from './types'
 import {
