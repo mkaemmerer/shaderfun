@@ -70,7 +70,7 @@ const projectSegment = (a: Expr, b: Expr) => (p: Expr) =>
     return pure(closest)
   })
 
-// Geometry
+// Euclidean Geometry
 export const point: SDF = (p) => pure(length(p))
 
 export const circle = (r: S): SDF => (p) => pure(minus(length(p), lit(r)))
@@ -143,9 +143,7 @@ const tSegmentDist = (a: Expr, b: Expr) => (p: Expr) =>
     return pure(min(length_l1(minusV(p, p1)), length_l1(minusV(p, p2))))
   })
 
-export const tCircle = (r: S): SDF => (p) => {
-  return pure(minus(length_l1(p), lit(r)))
-}
+export const tCircle = (r: S): SDF => (p) => pure(minus(length_l1(p), lit(r)))
 
 export const tBox = (corner: V2): SDF => (p) =>
   Do(function* () {
@@ -159,8 +157,7 @@ export const tBox = (corner: V2): SDF => (p) =>
     return pure(plus(length_l1(c), min(max(projX(d), projY(d)), lit(0))))
   })
 
-export const tSegment = (a: V2, b: V2): SDF => (p) =>
-  tSegmentDist(cast(a), cast(b))(p)
+export const tSegment = (a: V2, b: V2): SDF => tSegmentDist(cast(a), cast(b))
 
 export const tPolygon = (v: V2[]): SDF => (p) =>
   Do(function* () {
@@ -172,6 +169,75 @@ export const tPolygon = (v: V2[]): SDF => (p) =>
       const e = yield decl(minusV(cast(a), cast(b)))
       const w = yield decl(minusV(p, cast(b)))
       const c = yield decl(yield tSegmentDist(cast(a), cast(b))(p))
+      d = yield decl(min(d, c))
+
+      // Flip sign if we crossed an edge
+      const cond1 = yield decl(gteq(projY(p), lit(b.y)))
+      const cond2 = yield decl(lt(projY(p), lit(a.y)))
+      const cond3 = yield decl(
+        gt(times(projX(e), projY(w)), times(projY(e), projX(w)))
+      )
+      const condition = yield decl(
+        disj(
+          conj(cond1, cond2, cond3),
+          conj(not(cond1), not(cond2), not(cond3))
+        )
+      )
+      const newSign = Expr.If({
+        condition,
+        thenBranch: lit(1),
+        elseBranch: lit(-1),
+      })
+      sign = yield decl(times(sign, newSign))
+    }
+    return pure(times(sign, d))
+  })
+
+// Chebyshev Geometry
+const length_lInf = (p: Expr): Expr => max(abs(projX(p)), abs(projY(p)))
+
+const cSegmentDist = (a: Expr, b: Expr) => (p: Expr) =>
+  // Can't simply project to nearest point in L inf norm. "Closest" point not be unique.
+  Do(function* () {
+    const pa = yield decl(minusV(p, a))
+    const ba = yield decl(minusV(b, a))
+    const fac1 = yield decl(
+      saturate(div(minus(projY(pa), projX(pa)), minus(projY(ba), projX(ba))))
+    )
+    const fac2 = yield decl(
+      saturate(div(plus(projY(pa), projX(pa)), plus(projY(ba), projX(ba))))
+    )
+    const p1 = yield decl(plusV(a, timesV(fac1, ba)))
+    const p2 = yield decl(plusV(a, timesV(fac2, ba)))
+    return pure(min(length_lInf(minusV(p, p1)), length_lInf(minusV(p, p2))))
+  })
+
+export const cCircle = (r: S): SDF => (p) => pure(minus(length_lInf(p), lit(r)))
+
+export const cBox = (corner: V2): SDF => (p) =>
+  Do(function* () {
+    const d = yield decl(minusV(absV(p), cast(corner)))
+    const c = yield decl(
+      vec({
+        x: max(projX(d), lit(0)),
+        y: max(projY(d), lit(0)),
+      })
+    )
+    return pure(plus(length_lInf(c), min(max(projX(d), projY(d)), lit(0))))
+  })
+
+export const cSegment = (a: V2, b: V2): SDF => cSegmentDist(cast(a), cast(b))
+
+export const cPolygon = (v: V2[]): SDF => (p) =>
+  Do(function* () {
+    const pv = yield decl(minusV(p, cast(v[0])))
+
+    let sign = lit(v.length % 2 == 0 ? 1 : -1)
+    let d = yield decl(abs(length_l1(pv)))
+    for (const [a, b] of segments(v)) {
+      const e = yield decl(minusV(cast(a), cast(b)))
+      const w = yield decl(minusV(p, cast(b)))
+      const c = yield decl(yield cSegmentDist(cast(a), cast(b))(p))
       d = yield decl(min(d, c))
 
       // Flip sign if we crossed an edge
