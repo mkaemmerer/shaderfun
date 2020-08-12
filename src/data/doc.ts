@@ -66,9 +66,28 @@ export const intersperse = <T>(docs: Doc<T>[], sep: Doc<T>): Doc<T> =>
     Doc.Empty as Doc<T>
   )
 
-export const layout = (doc: Doc<string>): string =>
-  match(doc, {
-    'Doc.Empty': () => '',
-    'Doc.Text': ({ text, doc }) => `${text}${layout(doc)}`,
-    'Doc.Line': ({ depth, doc }) => `\n${' '.repeat(depth)}${layout(doc)}`,
-  })
+// Recursive version:
+// export const layout = (doc: Doc<string>): string =>
+//   match(doc, {
+//     'Doc.Empty': () => '',
+//     'Doc.Text': ({ text, doc }) => `${text}${layout(doc)}`,
+//     'Doc.Line': ({ depth, doc }) => `\n${' '.repeat(depth)}${layout(doc)}`,
+//   })
+
+// Stacksafe version
+export const layout = (document: Doc<string>): string => {
+  const step = (document: Doc<string>) =>
+    match(document, {
+      'Doc.Empty': () => ['', null],
+      'Doc.Text': ({ text, doc }) => [`${text}`, doc],
+      'Doc.Line': ({ depth, doc }) => [`\n${' '.repeat(depth)}`, doc],
+    })
+  let doc = document
+  let out = ''
+  while (doc) {
+    const [emit, next] = step(doc)
+    out = `${out}${emit}`
+    doc = next
+  }
+  return out
+}

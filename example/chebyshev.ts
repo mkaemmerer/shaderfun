@@ -26,4 +26,4 @@ const sdf: SDF = dilate(50)(
   )
 )
 
-export const program: Program = composeM(sdf)(stripeRamp)
+export const program: Program = composeM(sdf, stripeRamp)

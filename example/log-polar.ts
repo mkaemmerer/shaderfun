@@ -51,4 +51,4 @@ const pattern = rotate(TAU / 20)(
 )
 const sdf: SDF = repeatLogPolar(12)(scale(0.001)(pattern))
 
-export const program: Program = composeM(sdf)(stripeRamp)
+export const program: Program = composeM(sdf, stripeRamp)

@@ -13,8 +13,10 @@ import {
 
 const TAU = Math.PI * 2
 
+const id = (x) => x
+
 const iterate = (count) => (f) =>
-  count === 0 ? f : compose(f, iterate(count - 1)(f))
+  count === 0 ? id : compose(f, iterate(count - 1)(f))
 
 const fold = compose(
   mirrorX,
@@ -36,4 +38,4 @@ const line = segment({ x: 0, y: 0 }, { x: 1, y: 0 })
 
 const sdf: SDF = scale(600)(kochFold(line))
 
-export const program: Program = composeM(sdf)(stripeRamp)
+export const program: Program = composeM(sdf, stripeRamp)

@@ -35,4 +35,4 @@ const sdf: SDF = (p) =>
     return pure(minus(d, times(lit(10), fac)))
   })
 
-export const program: Program = composeM(sdf)(stripeRamp)
+export const program: Program = composeM(sdf, stripeRamp)
