@@ -1,13 +1,4 @@
-import {
-  SDF,
-  Program,
-  composeM,
-  circle,
-  gradientRamp,
-  Do,
-  pure,
-  decl,
-} from '../src'
+import { Program, composeM, gradientRamp, Do, pure, decl } from '../src'
 import { Expr } from '../src/lang'
 import {
   projX,
@@ -19,12 +10,16 @@ import {
   lit,
   plus,
   plusV,
+  if$,
+  length,
+  gt,
 } from '../src/lang/built-ins'
 
-const iterate = (count: number) => (actionM: Program) => {
+const iterate = (count: number) => (actionM) => {
   let f = (x) => pure(x)
   for (let i = 0; i < count; i++) {
-    f = composeM(actionM, f)
+    const prev = f
+    f = (p) => actionM(p).flatMap(prev)
   }
   return f
 }
@@ -41,20 +36,23 @@ const timesC = (c1: Expr, c2: Expr) => {
   })
 }
 
-const fold = (c: Expr) => (p: Expr) =>
+const fold = (c: Expr) => ([p, i]: [Expr, Expr]) =>
   Do(function* () {
-    const q = yield decl(timesC(p, p))
-    const p1 = yield decl(plusV(q, c))
-    return pure(p1)
+    const q = yield decl(plusV(timesC(p, p), c))
+    const p2 = yield decl(if$(gt(length(q), lit(2)), p, q))
+    const i2 = yield decl(if$(gt(length(q), lit(2)), i, plus(lit(1), i)))
+    return pure([p2, i2])
   })
 
+const ITERS = 200
 const c = vec({ x: lit(-0.4), y: lit(0.6) })
-const juliaFold = iterate(100)(fold(c))
+const juliaFold = iterate(ITERS)(fold(c))
 
-const juliaSet: SDF = composeM(
-  (p) => pure(timesV(lit(1 / 700), p)),
-  juliaFold,
-  circle(0)
-)
+const juliaSet: Program = (p) =>
+  pure(timesV(lit(1 / 700), p))
+    .flatMap((p) => pure([p, lit(0)]))
+    .flatMap(juliaFold)
+    .flatMap(([x, y]) => pure(y))
+    .flatMap((d) => pure(times(d, lit(1 / ITERS))))
 
 export const program: Program = composeM(juliaSet, gradientRamp)
