@@ -1,4 +1,13 @@
-import { SDF, Program, composeM, tCircle, repeatGrid, stripeRamp } from '../src'
+import {
+  Do,
+  pure,
+  SDF,
+  Program,
+  composeM,
+  tCircle,
+  repeatGrid,
+  stripeRamp,
+} from '../src'
 import {
   lit,
   floor,
@@ -8,7 +17,6 @@ import {
   minus,
   projX,
 } from '../src/lang/built-ins'
-import { Do, pure } from '../src/lang/ast-builder'
 
 const tiles: SDF = repeatGrid(200, 200)(tCircle(0))
 

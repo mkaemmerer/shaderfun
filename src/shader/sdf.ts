@@ -1,6 +1,14 @@
 import { V2, S } from '../util/vector'
-import { Expr, Program, Transform, overDomain, overRange } from '../lang'
-import { pure, decl, Do } from '../lang/ast-builder'
+import {
+  Expr,
+  Program,
+  Transform,
+  overDomain,
+  overRange,
+  pure,
+  decl,
+  Do,
+} from '../lang'
 import {
   abs,
   absV,
@@ -303,6 +311,18 @@ export const mirrorX = overDomain((p) =>
 export const mirrorY = overDomain((p) =>
   pure(vec({ x: projX(p), y: abs(projY(p)) }))
 )
+
+export const mirror = (angle: S) =>
+  overDomain((p) =>
+    Do(function* () {
+      const normal = yield decl(
+        vec({ x: sin(lit(-angle)), y: cos(lit(-angle)) })
+      )
+      const fac = yield decl(times(lit(2), max(lit(0), dot(normal, p))))
+      const refl = yield decl(minusV(p, timesV(fac, normal)))
+      return pure(refl)
+    })
+  )
 
 export const repeatX = (cellSize: S) =>
   overDomain((p) =>

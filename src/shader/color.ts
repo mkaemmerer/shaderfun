@@ -1,6 +1,5 @@
 import { S } from '../util/vector'
-import { Expr, Program } from '../lang'
-import { pure, Do, decl } from '../lang/ast-builder'
+import { Expr, Program, pure, Do, decl } from '../lang'
 import {
   lit,
   if$,
