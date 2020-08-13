@@ -14,6 +14,7 @@ import {
   smoothstep,
   mix,
   col,
+  sin,
   cos,
   plus,
   times,
@@ -65,10 +66,20 @@ const periodic = (offset: number, amp: number, freq: number, phase: number) => (
   return plus(lit(offset), times(lit(amp), wave))
 }
 
-export const gradientRamp: ColorRamp = (d) =>
+export const rainbowRamp: ColorRamp = (d) =>
   Do(function* () {
     const r = yield decl(periodic(0.5, 0.5, 1.0, 0.0)(d))
     const g = yield decl(periodic(0.5, 0.5, 1.0, 0.33)(d))
     const b = yield decl(periodic(0.5, 0.5, 1.0, 0.67)(d))
+    return pure(col({ r, g, b }))
+  })
+
+export const flameRamp: ColorRamp = (d) =>
+  Do(function* () {
+    const r = yield decl(sin(times(lit(TAU / 4), d)))
+    const g = yield decl(times(d, d))
+    const b = yield decl(
+      plus(times(lit(0.4), sin(times(lit(TAU), d))), times(lit(0.6), d))
+    )
     return pure(col({ r, g, b }))
   })

@@ -224,6 +224,7 @@ const defineBuiltins = sequenceM([
   defineFunc('sin',      [Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('cos',      [Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('log',      [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('log2',     [Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('saturate', [Type.Scalar], Type.Scalar), // prettier-ignore
   defineFunc('sqrt',     [Type.Scalar], Type.Scalar), // prettier-ignore
   // (Scalar, Scalar) -> Scalar

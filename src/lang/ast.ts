@@ -10,6 +10,7 @@ export type Builtin =
   | 'sin'
   | 'cos'
   | 'log'
+  | 'log2'
   | 'saturate'
   | 'sqrt'
   | 'atan'

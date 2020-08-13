@@ -140,6 +140,7 @@ const atan = Math.atan2
 const cos = Math.cos
 const floor = Math.floor
 const log = Math.log
+const log2 = Math.log2
 const max = Math.max
 const min = Math.min
 const sin = Math.sin
@@ -164,6 +165,7 @@ const defineBuiltins = sequenceM([
   defineVar('fract', fract),
   defineVar('length', length),
   defineVar('log', log),
+  defineVar('log2', log2),
   defineVar('max', max),
   defineVar('min', min),
   defineVar('mix', (c1: ColorRGB, c2: ColorRGB, fac: S) => mix(c1, c2)(fac)),

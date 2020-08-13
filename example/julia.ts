@@ -1,4 +1,4 @@
-import { Program, composeM, gradientRamp, Do, pure, decl } from '../src'
+import { Program, composeM, flameRamp, Do, pure, decl } from '../src'
 import { Expr } from '../src/lang'
 import {
   projX,
@@ -11,7 +11,8 @@ import {
   plus,
   plusV,
   if$,
-  length,
+  dot,
+  log2,
   gt,
 } from '../src/lang/built-ins'
 
@@ -39,8 +40,9 @@ const timesC = (c1: Expr, c2: Expr) => {
 const fold = (c: Expr) => ([p, i]: [Expr, Expr]) =>
   Do(function* () {
     const q = yield decl(plusV(timesC(p, p), c))
-    const p2 = yield decl(if$(gt(length(q), lit(2)), p, q))
-    const i2 = yield decl(if$(gt(length(q), lit(2)), i, plus(lit(1), i)))
+    const cond = yield decl(gt(dot(q, q), lit(4)))
+    const p2 = yield decl(if$(cond, p, q))
+    const i2 = yield decl(if$(cond, i, plus(lit(1), i)))
     return pure([p2, i2])
   })
 
@@ -52,7 +54,9 @@ const juliaSet: Program = (p) =>
   pure(timesV(lit(1 / 700), p))
     .flatMap((p) => pure([p, lit(0)]))
     .flatMap(juliaFold)
-    .flatMap(([x, y]) => pure(y))
+    // Smooth iteration count
+    .flatMap(([x, y]) => pure(plus(minus(y, log2(log2(dot(x, x)))), lit(4))))
+    // Map to 0 -> 1 range
     .flatMap((d) => pure(times(d, lit(1 / ITERS))))
 
-export const program: Program = composeM(juliaSet, gradientRamp)
+export const program: Program = composeM(juliaSet, flameRamp)
