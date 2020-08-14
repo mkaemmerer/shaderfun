@@ -1,5 +1,5 @@
 import { drawShader } from '../src'
-import { program } from './julia'
+import { program } from './sierpinski'
 
 const canvas = document.querySelector('canvas') as HTMLCanvasElement
 const gl = canvas.getContext('webgl')
