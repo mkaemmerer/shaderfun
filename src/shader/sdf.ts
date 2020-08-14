@@ -278,6 +278,9 @@ export const intersection = combineSDF((d1, d2) => max(d1, d2))
 
 export const difference = combineSDF((d1, d2) => max(d1, negate(d2)))
 
+export const blend = (fac: S) =>
+  combineSDF((d1, d2) => plus(times(d2, lit(fac)), times(d1, lit(1 - fac))))
+
 // Rigidbody
 export const translate = (v: V2): Transform =>
   overDomain((p) => pure(minusV(p, cast(v))))
