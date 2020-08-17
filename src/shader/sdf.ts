@@ -1,13 +1,12 @@
 import { V2, S } from '../util/vector'
 import {
   Expr,
-  Program,
-  Transform,
   overDomain,
   overRange,
   pure,
   decl,
   Do,
+  ShaderFunc,
 } from '../lang'
 import {
   abs,
@@ -42,24 +41,34 @@ import {
   or,
   not,
 } from '../lang/built-ins'
+import { TypeVec, TypeScalar, TypeBool } from '../lang/types'
 
 const TAU = Math.PI * 2
 
-export type SDF = Program
+export type SDF = ShaderFunc<TypeVec, TypeScalar>
+type DomainTransform = (
+  program: ShaderFunc<TypeVec, TypeVec>
+) => ShaderFunc<TypeVec, TypeScalar>
 
 // Utils
-const cast = (v: V2): Expr => vec({ x: lit(v.x), y: lit(v.y) })
+const cast = (v: V2): Expr<TypeVec> => vec({ x: lit(v.x), y: lit(v.y) })
 const id = <T>(x: T): T => x
 const compose2 = <A, B, C>(f: (b: B) => C, g: (a: A) => B) => (x: A) => f(g(x))
 
-const clamp = (expr: Expr, lo: Expr, hi: Expr): Expr => max(min(expr, hi), lo)
-const conj = (...conds: Expr[]) => conds.reduce(and)
-const disj = (...conds: Expr[]) => conds.reduce(or)
+const clamp = (
+  expr: Expr<TypeScalar>,
+  lo: Expr<TypeScalar>,
+  hi: Expr<TypeScalar>
+): Expr<TypeScalar> => max(min(expr, hi), lo)
+const conj = (...conds: Expr<TypeBool>[]) => conds.reduce(and)
+const disj = (...conds: Expr<TypeBool>[]) => conds.reduce(or)
 
 const segments = <T>(arr: T[]): [T, T][] =>
   arr.map((x, i) => [i == 0 ? arr[arr.length - 1] : arr[i - 1], x])
 
-const projectSegment = (a: Expr, b: Expr) => (p: Expr) =>
+const projectSegment = (a: Expr<TypeVec>, b: Expr<TypeVec>) => (
+  p: Expr<TypeVec>
+) =>
   Do(function* () {
     const pa = yield decl(minusV(p, a))
     const ba = yield decl(minusV(b, a))
@@ -127,9 +136,12 @@ export const polygon = (v: V2[]): SDF => (p) =>
   })
 
 // Taxicab Geometry
-const length_l1 = (p: Expr): Expr => plus(abs(projX(p)), abs(projY(p)))
+const length_l1 = (p: Expr<TypeVec>): Expr<TypeScalar> =>
+  plus(abs(projX(p)), abs(projY(p)))
 
-const tSegmentDist = (a: Expr, b: Expr) => (p: Expr) =>
+const tSegmentDist = (a: Expr<TypeVec>, b: Expr<TypeVec>) => (
+  p: Expr<TypeVec>
+) =>
   // Can't simply project to nearest point in L1 norm. "Closest" point not be unique.
   Do(function* () {
     const pa = yield decl(minusV(p, a))
@@ -192,9 +204,12 @@ export const tPolygon = (v: V2[]): SDF => (p) =>
   })
 
 // Chebyshev Geometry
-const length_lInf = (p: Expr): Expr => max(abs(projX(p)), abs(projY(p)))
+const length_lInf = (p: Expr<TypeVec>): Expr<TypeScalar> =>
+  max(abs(projX(p)), abs(projY(p)))
 
-const cSegmentDist = (a: Expr, b: Expr) => (p: Expr) =>
+const cSegmentDist = (a: Expr<TypeVec>, b: Expr<TypeVec>) => (
+  p: Expr<TypeVec>
+) =>
   // Can't simply project to nearest point in L inf norm. "Closest" point not be unique.
   Do(function* () {
     const pa = yield decl(minusV(p, a))
@@ -262,10 +277,9 @@ export const cPolygon = (v: V2[]): SDF => (p) =>
 
 // Operators
 // NB: these break the distance field
-const combineSDF = (f: (d1: Expr, d2: Expr) => Expr) => (
-  s1: SDF,
-  s2: SDF
-): SDF => (p) =>
+const combineSDF = (
+  f: (d1: Expr<TypeScalar>, d2: Expr<TypeScalar>) => Expr<TypeScalar>
+) => (s1: SDF, s2: SDF): SDF => (p) =>
   Do(function* () {
     const d1 = yield decl(yield s1(p))
     const d2 = yield decl(yield s2(p))
@@ -282,10 +296,10 @@ export const blend = (fac: S) =>
   combineSDF((d1, d2) => plus(times(d2, lit(fac)), times(d1, lit(1 - fac))))
 
 // Rigidbody
-export const translate = (v: V2): Transform =>
+export const translate = (v: V2): DomainTransform =>
   overDomain((p) => pure(minusV(p, cast(v))))
 
-export const rotate = (angle: S): Transform =>
+export const rotate = (angle: S): DomainTransform =>
   overDomain((p) =>
     Do(function* () {
       const cosa = yield decl(cos(lit(angle)))
@@ -301,7 +315,7 @@ export const rotate = (angle: S): Transform =>
     })
   )
 
-export const scale = (s: S): Transform => (sdf) => (p) =>
+export const scale = (s: S): DomainTransform => (sdf) => (p) =>
   sdf(timesV(lit(1 / s), p)).map((p) => times(p, lit(s)))
 
 // Domain repetition
@@ -350,7 +364,7 @@ export const repeatY = (cellSize: S) =>
 export const repeatGrid = (sizeX: S, sizeY: S = sizeX) =>
   compose(repeatX(sizeX), repeatY(sizeY))
 
-export const repeatPolar = (count: S): Transform =>
+export const repeatPolar = (count: S): DomainTransform =>
   overDomain((p) =>
     Do(function* () {
       const angle = TAU / count
@@ -364,7 +378,7 @@ export const repeatPolar = (count: S): Transform =>
   )
 
 // Domain repetition extras
-export const repeatLogPolar = (count: S): Transform => (sdf) => (p) =>
+export const repeatLogPolar = (count: S): DomainTransform => (sdf) => (p) =>
   Do(function* () {
     const r = yield decl(length(p))
     // Apply the forward log-polar map

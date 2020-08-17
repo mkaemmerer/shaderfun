@@ -9,8 +9,8 @@ import {
   defineVar as defineVarContext,
 } from './binding-context'
 import { UnaryOp, BinaryOp, Expr } from './ast'
-import { Program, run } from './program'
-import { TypeCol, TypeVec } from './types'
+import { ShaderProgram, run } from './program'
+import { TypeCol } from './types'
 
 type Result = S | V2 | ColorRGB | boolean | ResultFunction
 type ResultFunction = (...result: Result[]) => Result
@@ -105,7 +105,7 @@ const interpretBinary = (op: BinaryOp) => (
   }
 }
 
-const interpretExpr = (expr: Expr<any>): Interpreter<Result> =>
+const interpretExpr = <T>(expr: Expr<T>): Interpreter<Result> =>
   match(expr, {
     'Expr.Var': ({ variable }) => lookupVar(variable),
     'Expr.Lit': ({ value }) => pure(value),
@@ -177,7 +177,7 @@ const defineBuiltins = sequenceM([
   defineVar('sqrt', sqrt),
 ])
 
-export const interpret = (program: Program) => {
+export const interpret = (program: ShaderProgram) => {
   const expr: Expr<TypeCol> = run(program)
   return (p: V2): ColorRGB =>
     defineBuiltins

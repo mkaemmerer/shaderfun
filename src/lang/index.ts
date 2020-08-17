@@ -2,8 +2,7 @@ export { Expr, UnaryOp, BinaryOp, Builtin } from './ast'
 export { pure, decl, Do } from './ast-builder'
 export {
   ShaderFunc,
-  Program,
-  Transform,
+  ShaderProgram,
   composeM,
   overDomain,
   overRange,

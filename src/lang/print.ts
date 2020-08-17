@@ -32,10 +32,10 @@ const printType = (type: Type) =>
   })
 
 // Expressions
-const printExprReturnInner = (expr: Expr): Doc<string> =>
+const printExprReturnInner = <T>(expr: Expr<T>): Doc<string> =>
   seq(str('return'), str(' '), printExpr(expr), str(';'))
 
-const printExprReturn = (expr: Expr): Doc<string> =>
+const printExprReturn = <T>(expr: Expr<T>): Doc<string> =>
   match(expr, {
     'Expr.Var': () => printExprReturnInner(expr),
     'Expr.Lit': () => printExprReturnInner(expr),
@@ -61,7 +61,7 @@ const printExprReturn = (expr: Expr): Doc<string> =>
       ),
   })
 
-const printExpr = (expr: Expr): Doc<string> =>
+const printExpr = <T>(expr: Expr<T>): Doc<string> =>
   match(expr, {
     'Expr.Var': ({ variable }) => str(variable),
     'Expr.Lit': ({ value }) => str(`${litToString(value)}`),
@@ -151,4 +151,4 @@ const printBinaryExpr = (
 }
 
 // Program
-export const print = (expr: Expr): string => layout(printExprReturn(expr))
+export const print = <T>(expr: Expr<T>): string => layout(printExprReturn(expr))

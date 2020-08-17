@@ -15,6 +15,7 @@ import {
   log2,
   gt,
 } from '../src/lang/built-ins'
+import { TypeVec, TypeScalar } from '../src/lang/types'
 
 const iterate = (count: number) => (actionM) => {
   let f = (x) => pure(x)
@@ -25,7 +26,7 @@ const iterate = (count: number) => (actionM) => {
   return f
 }
 
-const timesC = (c1: Expr, c2: Expr) => {
+const timesC = (c1: Expr<TypeVec>, c2: Expr<TypeVec>) => {
   const r1 = projX(c1)
   const i1 = projY(c1)
   const r2 = projX(c2)
@@ -37,7 +38,10 @@ const timesC = (c1: Expr, c2: Expr) => {
   })
 }
 
-const fold = (c: Expr) => ([p, i]: [Expr, Expr]) =>
+const fold = (c: Expr<TypeVec>) => ([p, i]: [
+  Expr<TypeVec>,
+  Expr<TypeScalar>
+]) =>
   Do(function* () {
     const q = yield decl(plusV(timesC(p, p), c))
     const cond = yield decl(gt(dot(q, q), lit(4)))

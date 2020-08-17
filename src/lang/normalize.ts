@@ -3,20 +3,20 @@ import { Expr } from './ast'
 import { tagLocation } from './tag-location'
 import { typeCheck } from './type-check'
 
-type KSingle = (e: Expr) => Expr
-type KArray = (e: Expr[]) => Expr
+type KSingle = <T>(e: Expr<T>) => Expr<T>
+type KArray = <T>(e: Expr<T>[]) => Expr<T>
 
-const liftDecls = (...exprs: Expr[]) => (k: KArray): Expr =>
-  exprs.reduce<KArray>((ka: KArray, expr: Expr): KArray => {
-    const kArray: KArray = (xs: Expr[]) =>
+const liftDecls = <T>(...exprs: Expr<T>[]) => (k: KArray): Expr<T> =>
+  exprs.reduce<KArray>((ka: KArray, expr: Expr<T>): KArray => {
+    const kArray: KArray = (xs: Expr<T>[]) =>
       liftDecl(expr, (x) => {
-        const kSingle: KSingle = (x: Expr) => ka([x, ...xs])
+        const kSingle: KSingle = (x: Expr<T>) => ka([x, ...xs])
         return kSingle(x)
       })
     return kArray
   }, k)([])
 
-const liftDecl = (expr: Expr, k: KSingle): Expr =>
+const liftDecl = <T>(expr: Expr<T>, k: KSingle): Expr<T> =>
   match(expr, {
     'Expr.Var': () => k(expr),
     'Expr.Lit': () => k(expr),
@@ -64,7 +64,7 @@ const top = Infinity
 const opPrecedence = (op) =>
   precedenceTable.findIndex((ops) => ops.includes(op))
 
-const fixPrecedence = (expr: Expr, prec: number): Expr =>
+const fixPrecedence = <T>(expr: Expr<T>, prec: number): Expr<T> =>
   match(expr, {
     'Expr.Var': () => expr,
     'Expr.Lit': () => expr,
@@ -97,7 +97,7 @@ const fixPrecedence = (expr: Expr, prec: number): Expr =>
     'Expr.Call': ({ fn, args }) =>
       Expr.Call({
         fn,
-        args: args.map((arg: Expr) => fixPrecedence(arg, top)),
+        args: args.map((arg: Expr<T>) => fixPrecedence(arg, top)),
       }),
     'Expr.If': ({ condition, thenBranch, elseBranch }) => {
       const opPrec = opPrecedence('?:')
@@ -118,7 +118,7 @@ const fixPrecedence = (expr: Expr, prec: number): Expr =>
   })
 
 const id = (x) => x
-const normalizeExpr = (expr: Expr): Expr => {
+const normalizeExpr = <T>(expr: Expr<T>): Expr<T> => {
   const tagged = tagLocation(expr)
   const typedExpr = typeCheck(tagged)
   const withBindings = liftDecl(typedExpr, id)
