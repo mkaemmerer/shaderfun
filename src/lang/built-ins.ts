@@ -1,3 +1,4 @@
+import { S } from '../util/vector'
 import { Expr, UnaryOp, BinaryOp, Builtin } from './ast'
 import { Type, TypeBool, TypeVec, TypeScalar, TypeCol } from './types'
 
@@ -21,6 +22,13 @@ const call = <Args extends Expr<Type>[], TResult extends Type>(
 ) => (...exprs: Args): Expr<TResult> => Expr.Call({ fn: builtin, args: exprs })
 
 // Language Primitives
+type LiteralType<T> = T extends S
+  ? TypeScalar
+  : T extends boolean
+  ? TypeBool
+  : Type
+type Literal = S | boolean
+
 export const var$ = <T extends Type>(name: string): Expr<T> => Expr.Var(name)
 
 export const if$ = <T extends Type>(
@@ -29,7 +37,8 @@ export const if$ = <T extends Type>(
   elseBranch: Expr<T>
 ): Expr<T> => Expr.If({ condition, thenBranch, elseBranch })
 
-export const lit = <T extends Type>(val: any): Expr<T> => Expr.Lit(val)
+export const lit = <T extends Literal>(val: T): Expr<LiteralType<T>> =>
+  Expr.Lit(val)
 
 export const vec = ({ x, y }: ScalarRecoord): Expr<TypeVec> =>
   Expr.Vec({ x, y })

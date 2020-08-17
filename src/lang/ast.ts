@@ -66,17 +66,20 @@ export interface ExprVar<T> {
   kind: 'Expr.Var'
   variable: string
   loc?: Loc
+  _type?: T
 }
 export interface ExprLit<T> {
   kind: 'Expr.Lit'
   value: any
   loc?: Loc
+  _type?: T
 }
 export interface ExprVec<T> {
   kind: 'Expr.Vec'
   x: Expr<Type>
   y: Expr<Type>
   loc?: Loc
+  _type?: T
 }
 export interface ExprCol<T> {
   kind: 'Expr.Col'
@@ -84,12 +87,14 @@ export interface ExprCol<T> {
   g: Expr<Type>
   b: Expr<Type>
   loc?: Loc
+  _type?: T
 }
 export interface ExprUnary<T> {
   kind: 'Expr.Unary'
   op: UnaryOp
   expr: Expr<Type>
   loc?: Loc
+  _type?: T
 }
 export interface ExprBinary<T> {
   kind: 'Expr.Binary'
@@ -97,6 +102,7 @@ export interface ExprBinary<T> {
   exprLeft: Expr<Type>
   exprRight: Expr<Type>
   loc?: Loc
+  _type?: T
 }
 export interface ExprParen<T> {
   kind: 'Expr.Paren'
@@ -123,6 +129,7 @@ export interface ExprCall<T> {
   fn: string
   args: Expr<Type>[]
   loc?: Loc
+  _type?: T
 }
 
 // ----------------------------------------------------------------------------

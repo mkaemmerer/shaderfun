@@ -35,6 +35,7 @@ import {
   timesV,
   vec,
   gteq,
+  if$,
   lt,
   gt,
   and,
@@ -46,9 +47,6 @@ import { TypeVec, TypeScalar, TypeBool } from '../lang/types'
 const TAU = Math.PI * 2
 
 export type SDF = ShaderFunc<TypeVec, TypeScalar>
-type DomainTransform = (
-  program: ShaderFunc<TypeVec, TypeVec>
-) => ShaderFunc<TypeVec, TypeScalar>
 
 // Utils
 const cast = (v: V2): Expr<TypeVec> => vec({ x: lit(v.x), y: lit(v.y) })
@@ -60,8 +58,8 @@ const clamp = (
   lo: Expr<TypeScalar>,
   hi: Expr<TypeScalar>
 ): Expr<TypeScalar> => max(min(expr, hi), lo)
-const conj = (...conds: Expr<TypeBool>[]) => conds.reduce(and)
-const disj = (...conds: Expr<TypeBool>[]) => conds.reduce(or)
+const conj = (...conds: Expr<TypeBool>[]): Expr<TypeBool> => conds.reduce(and)
+const disj = (...conds: Expr<TypeBool>[]): Expr<TypeBool> => conds.reduce(or)
 
 const segments = <T>(arr: T[]): [T, T][] =>
   arr.map((x, i) => [i == 0 ? arr[arr.length - 1] : arr[i - 1], x])
@@ -125,11 +123,7 @@ export const polygon = (v: V2[]): SDF => (p) =>
           conj(not(cond1), not(cond2), not(cond3))
         )
       )
-      const newSign = Expr.If({
-        condition,
-        thenBranch: lit(1),
-        elseBranch: lit(-1),
-      })
+      const newSign = if$(condition, lit(1), lit(-1))
       sign = yield decl(times(sign, newSign))
     }
     return pure(times(sign, sqrt(d)))
@@ -193,11 +187,7 @@ export const tPolygon = (v: V2[]): SDF => (p) =>
           conj(not(cond1), not(cond2), not(cond3))
         )
       )
-      const newSign = Expr.If({
-        condition,
-        thenBranch: lit(1),
-        elseBranch: lit(-1),
-      })
+      const newSign = if$(condition, lit(1), lit(-1))
       sign = yield decl(times(sign, newSign))
     }
     return pure(times(sign, d))
@@ -265,11 +255,7 @@ export const cPolygon = (v: V2[]): SDF => (p) =>
           conj(not(cond1), not(cond2), not(cond3))
         )
       )
-      const newSign = Expr.If({
-        condition,
-        thenBranch: lit(1),
-        elseBranch: lit(-1),
-      })
+      const newSign = if$(condition, lit(1), lit(-1))
       sign = yield decl(times(sign, newSign))
     }
     return pure(times(sign, d))
@@ -296,11 +282,11 @@ export const blend = (fac: S) =>
   combineSDF((d1, d2) => plus(times(d2, lit(fac)), times(d1, lit(1 - fac))))
 
 // Rigidbody
-export const translate = (v: V2): DomainTransform =>
-  overDomain((p) => pure(minusV(p, cast(v))))
+export const translate = (v: V2) =>
+  overDomain<TypeVec, TypeVec>((p) => pure(minusV(p, cast(v))))
 
-export const rotate = (angle: S): DomainTransform =>
-  overDomain((p) =>
+export const rotate = (angle: S) =>
+  overDomain<TypeVec, TypeVec>((p) =>
     Do(function* () {
       const cosa = yield decl(cos(lit(angle)))
       const sina = yield decl(sin(lit(angle)))
@@ -315,22 +301,22 @@ export const rotate = (angle: S): DomainTransform =>
     })
   )
 
-export const scale = (s: S): DomainTransform => (sdf) => (p) =>
+export const scale = (s: S) => (sdf: SDF): SDF => (p) =>
   sdf(timesV(lit(1 / s), p)).map((p) => times(p, lit(s)))
 
 // Domain repetition
 export const compose = (...fs) => fs.reduce(compose2, id)
 
-export const mirrorX = overDomain((p) =>
+export const mirrorX = overDomain<TypeVec, TypeVec>((p) =>
   pure(vec({ x: abs(projX(p)), y: projY(p) }))
 )
 
-export const mirrorY = overDomain((p) =>
+export const mirrorY = overDomain<TypeVec, TypeVec>((p) =>
   pure(vec({ x: projX(p), y: abs(projY(p)) }))
 )
 
 export const mirror = (angle: S) =>
-  overDomain((p) =>
+  overDomain<TypeVec, TypeVec>((p) =>
     Do(function* () {
       const normal = yield decl(
         vec({ x: sin(lit(-angle)), y: cos(lit(-angle)) })
@@ -342,7 +328,7 @@ export const mirror = (angle: S) =>
   )
 
 export const repeatX = (cellSize: S) =>
-  overDomain((p) =>
+  overDomain<TypeVec, TypeVec>((p) =>
     decl(times(lit(cellSize), lit(0.5))).map((halfCell) =>
       vec({
         x: minus(mod(plus(projX(p), halfCell), lit(cellSize)), halfCell),
@@ -352,7 +338,7 @@ export const repeatX = (cellSize: S) =>
   )
 
 export const repeatY = (cellSize: S) =>
-  overDomain((p) =>
+  overDomain<TypeVec, TypeVec>((p) =>
     decl(times(lit(cellSize), lit(0.5))).map((halfCell) =>
       vec({
         x: projX(p),
@@ -364,8 +350,8 @@ export const repeatY = (cellSize: S) =>
 export const repeatGrid = (sizeX: S, sizeY: S = sizeX) =>
   compose(repeatX(sizeX), repeatY(sizeY))
 
-export const repeatPolar = (count: S): DomainTransform =>
-  overDomain((p) =>
+export const repeatPolar = (count: S) =>
+  overDomain<TypeVec, TypeVec>((p) =>
     Do(function* () {
       const angle = TAU / count
       const halfAngle = angle * 0.5
@@ -378,7 +364,7 @@ export const repeatPolar = (count: S): DomainTransform =>
   )
 
 // Domain repetition extras
-export const repeatLogPolar = (count: S): DomainTransform => (sdf) => (p) =>
+export const repeatLogPolar = (count: S) => (sdf) => (p) =>
   Do(function* () {
     const r = yield decl(length(p))
     // Apply the forward log-polar map
@@ -400,19 +386,20 @@ export const repeatLogPolar = (count: S): DomainTransform => (sdf) => (p) =>
   })
 
 // Morphology
-export const dilate = (fac: S) => overRange((d) => pure(minus(d, lit(fac))))
+export const dilate = (fac: S) =>
+  overRange<TypeScalar, TypeScalar>((d) => pure(minus(d, lit(fac))))
 
 export const outline = (fac: S) =>
-  overRange((r) => pure(minus(abs(r), lit(fac))))
+  overRange<TypeScalar, TypeScalar>((r) => pure(minus(abs(r), lit(fac))))
 
-export const invert = overRange((r) => pure(negate(r)))
+export const invert = overRange<TypeScalar, TypeScalar>((r) => pure(negate(r)))
 
 export const extrudeX = (fac: S) =>
-  overDomain((p) =>
+  overDomain<TypeVec, TypeVec>((p) =>
     pure(minusV(p, vec({ x: clamp(projX(p), lit(-fac), lit(fac)), y: lit(0) })))
   )
 
 export const extrudeY = (fac: S) =>
-  overDomain((p) =>
+  overDomain<TypeVec, TypeVec>((p) =>
     pure(minusV(p, vec({ x: lit(0), y: clamp(projY(p), lit(-fac), lit(fac)) })))
   )
