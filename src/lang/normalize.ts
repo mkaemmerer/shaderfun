@@ -2,21 +2,22 @@ import match from '../util/match'
 import { Expr } from './ast'
 import { tagLocation } from './tag-location'
 import { typeCheck } from './type-check'
+import { Type } from './types'
 
-type KSingle = <T>(e: Expr<T>) => Expr<T>
-type KArray = <T>(e: Expr<T>[]) => Expr<T>
+type KSingle = (e: Expr<Type>) => Expr<Type>
+type KArray = (e: Expr<Type>[]) => Expr<Type>
 
-const liftDecls = <T>(...exprs: Expr<T>[]) => (k: KArray): Expr<T> =>
-  exprs.reduce<KArray>((ka: KArray, expr: Expr<T>): KArray => {
-    const kArray: KArray = (xs: Expr<T>[]) =>
+const liftDecls = (...exprs: Expr<Type>[]) => (k: KArray): Expr<Type> =>
+  exprs.reduce<KArray>((ka: KArray, expr: Expr<Type>): KArray => {
+    const kArray: KArray = (xs: Expr<Type>[]) =>
       liftDecl(expr, (x) => {
-        const kSingle: KSingle = (x: Expr<T>) => ka([x, ...xs])
+        const kSingle: KSingle = (x: Expr<Type>) => ka([x, ...xs])
         return kSingle(x)
       })
     return kArray
   }, k)([])
 
-const liftDecl = <T>(expr: Expr<T>, k: KSingle): Expr<T> =>
+const liftDecl = (expr: Expr<Type>, k: KSingle): Expr<Type> =>
   match(expr, {
     'Expr.Var': () => k(expr),
     'Expr.Lit': () => k(expr),
@@ -64,7 +65,7 @@ const top = Infinity
 const opPrecedence = (op) =>
   precedenceTable.findIndex((ops) => ops.includes(op))
 
-const fixPrecedence = <T>(expr: Expr<T>, prec: number): Expr<T> =>
+const fixPrecedence = (expr: Expr<Type>, prec: number): Expr<Type> =>
   match(expr, {
     'Expr.Var': () => expr,
     'Expr.Lit': () => expr,
@@ -97,7 +98,7 @@ const fixPrecedence = <T>(expr: Expr<T>, prec: number): Expr<T> =>
     'Expr.Call': ({ fn, args }) =>
       Expr.Call({
         fn,
-        args: args.map((arg: Expr<T>) => fixPrecedence(arg, top)),
+        args: args.map((arg: Expr<Type>) => fixPrecedence(arg, top)),
       }),
     'Expr.If': ({ condition, thenBranch, elseBranch }) => {
       const opPrec = opPrecedence('?:')
@@ -118,12 +119,13 @@ const fixPrecedence = <T>(expr: Expr<T>, prec: number): Expr<T> =>
   })
 
 const id = (x) => x
-const normalizeExpr = <T>(expr: Expr<T>): Expr<T> => {
+const normalizeExpr = <T extends Type>(expr: Expr<T>): Expr<T> => {
   const tagged = tagLocation(expr)
   const typedExpr = typeCheck(tagged)
   const withBindings = liftDecl(typedExpr, id)
   const withPrecedence = fixPrecedence(withBindings, top)
-  return withPrecedence
+  // Assert that normalization didn't change the underlying type
+  return withPrecedence as Expr<T>
 }
 
 export const normalize = normalizeExpr

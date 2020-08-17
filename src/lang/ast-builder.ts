@@ -1,5 +1,6 @@
 import { State } from '../monad/state'
 import { Expr } from './ast'
+import { Type } from './types'
 
 const id = <T>(x: T): T => x
 
@@ -27,7 +28,7 @@ const newVar = (): AstBuilder<Var> =>
     State.set({ count: count + 1, cont }).map(() => `var_${count}`)
   )
 
-export const decl = <T>(expr: Expr<T>): AstBuilder<Expr<T>> =>
+export const decl = <T extends Type>(expr: Expr<T>): AstBuilder<Expr<T>> =>
   newVar().flatMap((v) =>
     State.get<BuilderState>()
       .flatMap(({ count, cont }) => {

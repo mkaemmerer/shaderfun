@@ -1,5 +1,5 @@
 import { Loc } from './location'
-import { Type, TypeBool, TypeCol, TypeV2 } from './types'
+import { Type, TypeBool } from './types'
 
 export type Builtin =
   | 'length'

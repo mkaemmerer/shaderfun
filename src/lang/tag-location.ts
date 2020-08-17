@@ -9,6 +9,7 @@ import {
   ASTContext,
 } from './ast-context'
 import { Expr } from './ast'
+import { Type } from './types'
 
 const writeLocation = <T>(astM: ASTContext<Expr<T>>): ASTContext<Expr<T>> =>
   readLocation().flatMap((loc) =>
@@ -18,7 +19,7 @@ const writeLocation = <T>(astM: ASTContext<Expr<T>>): ASTContext<Expr<T>> =>
     }))
   )
 
-const tagExpr = <T>(expr: Expr<T>): ASTContext<Expr<T>> =>
+const tagExpr = <T extends Type>(expr: Expr<T>): ASTContext<Expr<T>> =>
   writeLocation(
     match(expr, {
       'Expr.Var': ({ variable }) => pure(Expr.Var(variable)),
@@ -48,7 +49,7 @@ const tagExpr = <T>(expr: Expr<T>): ASTContext<Expr<T>> =>
         return argsM.map((args) => Expr.Call({ fn, args }))
       },
       'Expr.Paren': ({ expr }) =>
-        withKey('expr', tagExpr(expr)).map((expr) => Expr.Paren(expr)),
+        withKey('expr', tagExpr<T>(expr)).map((expr) => Expr.Paren(expr)),
       'Expr.If': ({ condition, thenBranch, elseBranch }) => {
         const conditionM = withKey('condition', tagExpr(condition))
         const thenBranchM = withKey('thenBranch', tagExpr(thenBranch))
@@ -71,5 +72,5 @@ const tagExpr = <T>(expr: Expr<T>): ASTContext<Expr<T>> =>
     })
   )
 
-export const tagLocation = <T>(expr: Expr<T>): Expr<T> =>
+export const tagLocation = <T extends Type>(expr: Expr<T>): Expr<T> =>
   tagExpr(expr).run(empty)[1]
