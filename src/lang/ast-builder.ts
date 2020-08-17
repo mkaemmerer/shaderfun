@@ -4,7 +4,7 @@ import { Expr } from './ast'
 const id = <T>(x: T): T => x
 
 type Var = string
-type K = (expr: Expr) => Expr
+type K = (expr: Expr<any>) => Expr<any>
 type BuilderState = { count: number; cont: K }
 export type AstBuilder<T> = State<BuilderState, T>
 
@@ -27,11 +27,11 @@ const newVar = (): AstBuilder<Var> =>
     State.set({ count: count + 1, cont }).map(() => `var_${count}`)
   )
 
-export const decl = (expr: Expr): AstBuilder<Expr> =>
+export const decl = <T>(expr: Expr<T>): AstBuilder<Expr<T>> =>
   newVar().flatMap((v) =>
     State.get<BuilderState>()
       .flatMap(({ count, cont }) => {
-        const newCont: K = (body: Expr) =>
+        const newCont: K = (body: Expr<any>) =>
           cont(
             Expr.Bind({
               variable: v,
@@ -44,7 +44,7 @@ export const decl = (expr: Expr): AstBuilder<Expr> =>
       .flatMap(() => pure(Expr.Var(v)))
   )
 
-export const run = (ctx: AstBuilder<Expr>): Expr => {
+export const run = <T>(ctx: AstBuilder<Expr<T>>): Expr<T> => {
   const [{ cont }, expr] = ctx.run(emptyState)
   return cont(expr)
 }

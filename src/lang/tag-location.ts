@@ -10,7 +10,7 @@ import {
 } from './ast-context'
 import { Expr } from './ast'
 
-const writeLocation = (astM: ASTContext<Expr>): ASTContext<any> =>
+const writeLocation = <T>(astM: ASTContext<Expr<T>>): ASTContext<Expr<T>> =>
   readLocation().flatMap((loc) =>
     astM.map((ast) => ({
       ...ast,
@@ -18,7 +18,7 @@ const writeLocation = (astM: ASTContext<Expr>): ASTContext<any> =>
     }))
   )
 
-const tagExpr = (expr: Expr): ASTContext<Expr> =>
+const tagExpr = <T>(expr: Expr<T>): ASTContext<Expr<T>> =>
   writeLocation(
     match(expr, {
       'Expr.Var': ({ variable }) => pure(Expr.Var(variable)),
@@ -71,4 +71,5 @@ const tagExpr = (expr: Expr): ASTContext<Expr> =>
     })
   )
 
-export const tagLocation = (expr: Expr) => tagExpr(expr).run(empty)[1]
+export const tagLocation = <T>(expr: Expr<T>): Expr<T> =>
+  tagExpr(expr).run(empty)[1]

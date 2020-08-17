@@ -10,6 +10,7 @@ import {
 } from './binding-context'
 import { UnaryOp, BinaryOp, Expr } from './ast'
 import { Program, run } from './program'
+import { TypeCol, TypeVec } from './types'
 
 type Result = S | V2 | ColorRGB | boolean | ResultFunction
 type ResultFunction = (...result: Result[]) => Result
@@ -104,7 +105,7 @@ const interpretBinary = (op: BinaryOp) => (
   }
 }
 
-const interpretExpr = (expr: Expr): Interpreter<Result> =>
+const interpretExpr = (expr: Expr<any>): Interpreter<Result> =>
   match(expr, {
     'Expr.Var': ({ variable }) => lookupVar(variable),
     'Expr.Lit': ({ value }) => pure(value),
@@ -177,7 +178,7 @@ const defineBuiltins = sequenceM([
 ])
 
 export const interpret = (program: Program) => {
-  const expr: Expr = run(program)
+  const expr: Expr<TypeCol> = run(program)
   return (p: V2): ColorRGB =>
     defineBuiltins
       .flatMap(() => defineVar('p', p))

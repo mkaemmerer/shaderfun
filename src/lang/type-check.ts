@@ -33,7 +33,7 @@ const synthUnify = (typesM: TypeChecker<Type>[]): TypeChecker<Type> =>
     )
   )
 
-const synthExpr = (expr: Expr): TypeChecker<Type> =>
+const synthExpr = <T>(expr: Expr<T>): TypeChecker<Type> =>
   match(expr, {
     'Expr.Var': ({ variable }) => lookupVar(variable),
     'Expr.Lit': ({ value }) => pure(literalType(value)),
@@ -107,7 +107,10 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
         .flatMap(({ input, output }) =>
           input.length === args.length
             ? sequenceM(
-                zipWith<Type, Expr, TypeChecker<Type>>(checkExpr)(input, args)
+                zipWith<Type, Expr<any>, TypeChecker<Type>>(checkExpr)(
+                  input,
+                  args
+                )
               ).map(() => output)
             : fail('wrong number of arguments')
         ),
@@ -130,10 +133,13 @@ const synthExpr = (expr: Expr): TypeChecker<Type> =>
 // Type Checking
 //-----------------------------------------------------------------------------
 
-const checkExprInner = (type: Type) => (expr: Expr): TypeChecker<Type> =>
-  synthExpr(expr).flatMap(expectType(type))
+const checkExprInner = <T extends Type>(type: Type) => (
+  expr: Expr<T>
+): TypeChecker<Type> => synthExpr(expr).flatMap(expectType(type))
 
-const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
+const checkExpr = <T extends Type>(type: Type) => (
+  expr: Expr<T>
+): TypeChecker<Type> =>
   withLocation(
     expr.loc,
     match(expr, {
@@ -169,7 +175,7 @@ const checkExpr = (type: Type) => (expr: Expr): TypeChecker<Type> =>
 //-----------------------------------------------------------------------------
 // Populate Types
 //-----------------------------------------------------------------------------
-const populateExpr = (expr: Expr): TypeChecker<Expr> =>
+const populateExpr = <T>(expr: Expr<T>): TypeChecker<Expr<T>> =>
   match(expr, {
     'Expr.Var': () => pure(expr),
     'Expr.Lit': () => pure(expr),
@@ -243,7 +249,7 @@ const defineBuiltins = sequenceM([
   defineFunc('mix', [Type.Col, Type.Col, Type.Scalar], Type.Col),
 ])
 
-export const typeCheck = (expr: Expr): Expr =>
+export const typeCheck = <T extends Type>(expr: Expr<T>): Expr<T> =>
   defineBuiltins // Set default bindings
     .flatMap(() => synthExpr(expr))
     .flatMap(() => populateExpr(expr))

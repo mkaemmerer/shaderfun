@@ -1,5 +1,5 @@
 import { Loc } from './location'
-import { Type } from './types'
+import { Type, TypeBool, TypeCol, TypeVec } from './types'
 
 export type Builtin =
   | 'length'
@@ -50,78 +50,78 @@ export type BinaryOp =
   | '*>'
 
 // Expressions
-export type Expr =
-  | ExprVar
-  | ExprLit
-  | ExprVec
-  | ExprCol
-  | ExprUnary
-  | ExprBinary
-  | ExprParen
-  | ExprIf
-  | ExprBind
-  | ExprCall
+export type Expr<T> =
+  | ExprVar<T>
+  | ExprLit<T>
+  | ExprVec<T>
+  | ExprCol<T>
+  | ExprUnary<T>
+  | ExprBinary<T>
+  | ExprParen<T>
+  | ExprIf<T>
+  | ExprBind<T>
+  | ExprCall<T>
 
-export interface ExprVar {
+export interface ExprVar<T> {
   kind: 'Expr.Var'
   variable: string
   loc?: Loc
 }
-export interface ExprLit {
+export interface ExprLit<T> {
   kind: 'Expr.Lit'
   value: any
   loc?: Loc
 }
-export interface ExprVec {
+export interface ExprVec<T> {
   kind: 'Expr.Vec'
-  x: Expr
-  y: Expr
+  x: Expr<Type>
+  y: Expr<Type>
   loc?: Loc
 }
-export interface ExprCol {
+export interface ExprCol<T> {
   kind: 'Expr.Col'
-  r: Expr
-  g: Expr
-  b: Expr
+  r: Expr<Type>
+  g: Expr<Type>
+  b: Expr<Type>
   loc?: Loc
 }
-export interface ExprUnary {
+export interface ExprUnary<T> {
   kind: 'Expr.Unary'
   op: UnaryOp
-  expr: Expr
+  expr: Expr<Type>
   loc?: Loc
 }
-export interface ExprBinary {
+export interface ExprBinary<T> {
   kind: 'Expr.Binary'
   op: BinaryOp
-  exprLeft: Expr
-  exprRight: Expr
+  exprLeft: Expr<Type>
+  exprRight: Expr<Type>
   loc?: Loc
 }
-export interface ExprParen {
+export interface ExprParen<T> {
   kind: 'Expr.Paren'
-  expr: Expr
+  expr: Expr<T>
   loc?: Loc
 }
-export interface ExprIf {
+export interface ExprIf<T> {
   kind: 'Expr.If'
-  condition: Expr
-  thenBranch: Expr
-  elseBranch: Expr
+  condition: Expr<TypeBool>
+  thenBranch: Expr<T>
+  elseBranch: Expr<T>
   loc?: Loc
 }
-export interface ExprBind {
+export interface ExprBind<T> {
   kind: 'Expr.Bind'
   variable: string
   type?: Type
-  value: Expr
-  body: Expr
+  value: Expr<Type>
+  body: Expr<T>
   loc?: Loc
 }
-export interface ExprCall {
+export interface ExprCall<T> {
   kind: 'Expr.Call'
   fn: string
-  args: Expr[]
+  args: Expr<Type>[]
   loc?: Loc
 }
 
@@ -131,41 +131,48 @@ export interface ExprCall {
 
 // Expressions
 export const Expr = {
-  Var: (variable): Expr => ({ kind: 'Expr.Var', variable }),
-  Lit: (value: any): Expr => ({ kind: 'Expr.Lit', value }),
-  Unary: ({ op, expr }): Expr => ({ kind: 'Expr.Unary', op, expr }),
-  Binary: ({ op, exprLeft, exprRight }): Expr => ({
+  Var: <T extends Type>(variable): Expr<T> => ({ kind: 'Expr.Var', variable }),
+  Lit: <T extends Type>(value: any): Expr<T> => ({ kind: 'Expr.Lit', value }),
+  Unary: <T extends Type>({ op, expr }): Expr<T> => ({
+    kind: 'Expr.Unary',
+    op,
+    expr,
+  }),
+  Binary: <T extends Type>({ op, exprLeft, exprRight }): Expr<T> => ({
     kind: 'Expr.Binary',
     op,
     exprLeft,
     exprRight,
   }),
-  Paren: (expr: Expr): Expr => ({ kind: 'Expr.Paren', expr }),
-  If: ({ condition, thenBranch, elseBranch }): Expr => ({
+  Paren: <T extends Type>(expr: Expr<T>): Expr<T> => ({
+    kind: 'Expr.Paren',
+    expr,
+  }),
+  If: <T extends Type>({ condition, thenBranch, elseBranch }): Expr<T> => ({
     kind: 'Expr.If',
     condition,
     thenBranch,
     elseBranch,
   }),
-  Vec: ({ x, y }): Expr => ({
+  Vec: ({ x, y }): Expr<TypeVec> => ({
     kind: 'Expr.Vec',
     x,
     y,
   }),
-  Col: ({ r, g, b }): Expr => ({
+  Col: ({ r, g, b }): Expr<TypeCol> => ({
     kind: 'Expr.Col',
     r,
     g,
     b,
   }),
-  Bind: ({ variable, type = null, value, body }): Expr => ({
+  Bind: <T extends Type>({ variable, type = null, value, body }): Expr<T> => ({
     kind: 'Expr.Bind',
     variable,
     value,
     type,
     body,
   }),
-  Call: ({ fn, args }): Expr => ({
+  Call: <T extends Type>({ fn, args }): Expr<T> => ({
     kind: 'Expr.Call',
     fn,
     args,

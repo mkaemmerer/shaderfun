@@ -1,5 +1,5 @@
 import { S } from '../util/vector'
-import { Expr, Program, pure, Do, decl } from '../lang'
+import { Expr, ShaderFunc, pure, Do, decl } from '../lang'
 import {
   lit,
   if$,
@@ -19,15 +19,16 @@ import {
   plus,
   times,
 } from '../lang/built-ins'
+import { TypeScalar, TypeCol } from '../lang/types'
 
 // Scalar -> Color
-export type ColorRamp = Program
+export type ColorRamp = ShaderFunc<TypeScalar, TypeCol>
 
 const TAU = 2 * Math.PI
 const EPSILON = lit(2)
 const STRIPE_WIDTH = lit(10)
 
-const grayscale = (value: S): Expr =>
+const grayscale = (value: S): Expr<TypeCol> =>
   col({ r: lit(value), g: lit(value), b: lit(value) })
 
 const black = grayscale(0)
@@ -46,7 +47,7 @@ const outline = (fallback: ColorRamp): ColorRamp => (d) =>
 
 export const signRamp: ColorRamp = (d) => pure(if$(gt(d, lit(0)), white, black))
 
-const stripes = (c1: Expr, c2: Expr): ColorRamp => (d) => {
+const stripes = (c1: Expr<TypeCol>, c2: Expr<TypeCol>): ColorRamp => (d) => {
   const cond = eq(mod(floor(div(d, STRIPE_WIDTH)), lit(2)), lit(0))
   return pure(if$(cond, c1, c2))
 }
@@ -60,7 +61,7 @@ export const stripeRamp: ColorRamp = outline((d) =>
 )
 
 const periodic = (offset: number, amp: number, freq: number, phase: number) => (
-  d: Expr
+  d: Expr<TypeScalar>
 ) => {
   const wave = cos(times(lit(TAU), plus(times(d, lit(freq)), lit(phase))))
   return plus(lit(offset), times(lit(amp), wave))
