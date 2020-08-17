@@ -42,30 +42,30 @@ import {
   or,
   not,
 } from '../lang/built-ins'
-import { TypeVec, TypeScalar, TypeBool } from '../lang/types'
+import { TypeV2, TypeS, TypeBool } from '../lang/types'
 
 const TAU = Math.PI * 2
 
-export type SDF = ShaderFunc<TypeVec, TypeScalar>
+export type SDF = ShaderFunc<TypeV2, TypeS>
 
 // Utils
-const cast = (v: V2): Expr<TypeVec> => vec({ x: lit(v.x), y: lit(v.y) })
+const cast = (v: V2): Expr<TypeV2> => vec({ x: lit(v.x), y: lit(v.y) })
 const id = <T>(x: T): T => x
 const compose2 = <A, B, C>(f: (b: B) => C, g: (a: A) => B) => (x: A) => f(g(x))
 
 const clamp = (
-  expr: Expr<TypeScalar>,
-  lo: Expr<TypeScalar>,
-  hi: Expr<TypeScalar>
-): Expr<TypeScalar> => max(min(expr, hi), lo)
+  expr: Expr<TypeS>,
+  lo: Expr<TypeS>,
+  hi: Expr<TypeS>
+): Expr<TypeS> => max(min(expr, hi), lo)
 const conj = (...conds: Expr<TypeBool>[]): Expr<TypeBool> => conds.reduce(and)
 const disj = (...conds: Expr<TypeBool>[]): Expr<TypeBool> => conds.reduce(or)
 
 const segments = <T>(arr: T[]): [T, T][] =>
   arr.map((x, i) => [i == 0 ? arr[arr.length - 1] : arr[i - 1], x])
 
-const projectSegment = (a: Expr<TypeVec>, b: Expr<TypeVec>) => (
-  p: Expr<TypeVec>
+const projectSegment = (a: Expr<TypeV2>, b: Expr<TypeV2>) => (
+  p: Expr<TypeV2>
 ) =>
   Do(function* () {
     const pa = yield decl(minusV(p, a))
@@ -130,12 +130,10 @@ export const polygon = (v: V2[]): SDF => (p) =>
   })
 
 // Taxicab Geometry
-const length_l1 = (p: Expr<TypeVec>): Expr<TypeScalar> =>
+const length_l1 = (p: Expr<TypeV2>): Expr<TypeS> =>
   plus(abs(projX(p)), abs(projY(p)))
 
-const tSegmentDist = (a: Expr<TypeVec>, b: Expr<TypeVec>) => (
-  p: Expr<TypeVec>
-) =>
+const tSegmentDist = (a: Expr<TypeV2>, b: Expr<TypeV2>) => (p: Expr<TypeV2>) =>
   // Can't simply project to nearest point in L1 norm. "Closest" point not be unique.
   Do(function* () {
     const pa = yield decl(minusV(p, a))
@@ -194,12 +192,10 @@ export const tPolygon = (v: V2[]): SDF => (p) =>
   })
 
 // Chebyshev Geometry
-const length_lInf = (p: Expr<TypeVec>): Expr<TypeScalar> =>
+const length_lInf = (p: Expr<TypeV2>): Expr<TypeS> =>
   max(abs(projX(p)), abs(projY(p)))
 
-const cSegmentDist = (a: Expr<TypeVec>, b: Expr<TypeVec>) => (
-  p: Expr<TypeVec>
-) =>
+const cSegmentDist = (a: Expr<TypeV2>, b: Expr<TypeV2>) => (p: Expr<TypeV2>) =>
   // Can't simply project to nearest point in L inf norm. "Closest" point not be unique.
   Do(function* () {
     const pa = yield decl(minusV(p, a))
@@ -263,9 +259,10 @@ export const cPolygon = (v: V2[]): SDF => (p) =>
 
 // Operators
 // NB: these break the distance field
-const combineSDF = (
-  f: (d1: Expr<TypeScalar>, d2: Expr<TypeScalar>) => Expr<TypeScalar>
-) => (s1: SDF, s2: SDF): SDF => (p) =>
+const combineSDF = (f: (d1: Expr<TypeS>, d2: Expr<TypeS>) => Expr<TypeS>) => (
+  s1: SDF,
+  s2: SDF
+): SDF => (p) =>
   Do(function* () {
     const d1 = yield decl(yield s1(p))
     const d2 = yield decl(yield s2(p))
@@ -283,10 +280,10 @@ export const blend = (fac: S) =>
 
 // Rigidbody
 export const translate = (v: V2) =>
-  overDomain<TypeVec, TypeVec>((p) => pure(minusV(p, cast(v))))
+  overDomain<TypeV2, TypeV2>((p) => pure(minusV(p, cast(v))))
 
 export const rotate = (angle: S) =>
-  overDomain<TypeVec, TypeVec>((p) =>
+  overDomain<TypeV2, TypeV2>((p) =>
     Do(function* () {
       const cosa = yield decl(cos(lit(angle)))
       const sina = yield decl(sin(lit(angle)))
@@ -307,16 +304,16 @@ export const scale = (s: S) => (sdf: SDF): SDF => (p) =>
 // Domain repetition
 export const compose = (...fs) => fs.reduce(compose2, id)
 
-export const mirrorX = overDomain<TypeVec, TypeVec>((p) =>
+export const mirrorX = overDomain<TypeV2, TypeV2>((p) =>
   pure(vec({ x: abs(projX(p)), y: projY(p) }))
 )
 
-export const mirrorY = overDomain<TypeVec, TypeVec>((p) =>
+export const mirrorY = overDomain<TypeV2, TypeV2>((p) =>
   pure(vec({ x: projX(p), y: abs(projY(p)) }))
 )
 
 export const mirror = (angle: S) =>
-  overDomain<TypeVec, TypeVec>((p) =>
+  overDomain<TypeV2, TypeV2>((p) =>
     Do(function* () {
       const normal = yield decl(
         vec({ x: sin(lit(-angle)), y: cos(lit(-angle)) })
@@ -328,7 +325,7 @@ export const mirror = (angle: S) =>
   )
 
 export const repeatX = (cellSize: S) =>
-  overDomain<TypeVec, TypeVec>((p) =>
+  overDomain<TypeV2, TypeV2>((p) =>
     decl(times(lit(cellSize), lit(0.5))).map((halfCell) =>
       vec({
         x: minus(mod(plus(projX(p), halfCell), lit(cellSize)), halfCell),
@@ -338,7 +335,7 @@ export const repeatX = (cellSize: S) =>
   )
 
 export const repeatY = (cellSize: S) =>
-  overDomain<TypeVec, TypeVec>((p) =>
+  overDomain<TypeV2, TypeV2>((p) =>
     decl(times(lit(cellSize), lit(0.5))).map((halfCell) =>
       vec({
         x: projX(p),
@@ -351,7 +348,7 @@ export const repeatGrid = (sizeX: S, sizeY: S = sizeX) =>
   compose(repeatX(sizeX), repeatY(sizeY))
 
 export const repeatPolar = (count: S) =>
-  overDomain<TypeVec, TypeVec>((p) =>
+  overDomain<TypeV2, TypeV2>((p) =>
     Do(function* () {
       const angle = TAU / count
       const halfAngle = angle * 0.5
@@ -387,19 +384,19 @@ export const repeatLogPolar = (count: S) => (sdf) => (p) =>
 
 // Morphology
 export const dilate = (fac: S) =>
-  overRange<TypeScalar, TypeScalar>((d) => pure(minus(d, lit(fac))))
+  overRange<TypeS, TypeS>((d) => pure(minus(d, lit(fac))))
 
 export const outline = (fac: S) =>
-  overRange<TypeScalar, TypeScalar>((r) => pure(minus(abs(r), lit(fac))))
+  overRange<TypeS, TypeS>((r) => pure(minus(abs(r), lit(fac))))
 
-export const invert = overRange<TypeScalar, TypeScalar>((r) => pure(negate(r)))
+export const invert = overRange<TypeS, TypeS>((r) => pure(negate(r)))
 
 export const extrudeX = (fac: S) =>
-  overDomain<TypeVec, TypeVec>((p) =>
+  overDomain<TypeV2, TypeV2>((p) =>
     pure(minusV(p, vec({ x: clamp(projX(p), lit(-fac), lit(fac)), y: lit(0) })))
   )
 
 export const extrudeY = (fac: S) =>
-  overDomain<TypeVec, TypeVec>((p) =>
+  overDomain<TypeV2, TypeV2>((p) =>
     pure(minusV(p, vec({ x: lit(0), y: clamp(projY(p), lit(-fac), lit(fac)) })))
   )

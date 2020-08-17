@@ -1,9 +1,9 @@
 import { Expr } from '.'
 import { AstBuilder, decl, run as runShader, pure } from './ast-builder'
-import { TypeVec, TypeCol } from './types'
+import { TypeV2, TypeCol } from './types'
 
 export type ShaderFunc<In, Out> = (e: Expr<In>) => AstBuilder<Expr<Out>>
-export type ShaderProgram = ShaderFunc<TypeVec, TypeCol>
+export type ShaderProgram = ShaderFunc<TypeV2, TypeCol>
 
 export const overDomain = <In1, In2>(f: ShaderFunc<In1, In2>) => (
   program: ShaderFunc<In2, any>

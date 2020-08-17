@@ -38,25 +38,25 @@ const synthExpr = <T>(expr: Expr<T>): TypeChecker<Type> =>
     'Expr.Var': ({ variable }) => lookupVar(variable),
     'Expr.Lit': ({ value }) => pure(literalType(value)),
     'Expr.Vec': ({ x, y }) =>
-      sequenceM([x, y].map(checkExpr(Type.Scalar))).map(() => Type.Vec),
+      sequenceM([x, y].map(checkExpr(Type.S))).map(() => Type.V2),
     'Expr.Col': ({ r, g, b }) =>
-      sequenceM([r, g, b].map(checkExpr(Type.Scalar))).map(() => Type.Col),
+      sequenceM([r, g, b].map(checkExpr(Type.S))).map(() => Type.Col),
     'Expr.Unary': ({ expr, op }) => {
       const checkUnary = (typeIn: Type, typeResult: Type) =>
         checkExpr(typeIn)(expr).map(() => typeResult)
       switch (op) {
         // Scalar -> Scalar
         case '-': // fall-through
-          return checkUnary(Type.Scalar, Type.Scalar)
+          return checkUnary(Type.S, Type.S)
         // Vector -> Scalar
         case 'projX': // fall-through
         case 'projY':
-          return checkUnary(Type.Vec, Type.Scalar)
+          return checkUnary(Type.V2, Type.S)
         // Color -> Scalar
         case 'projR': // fall-through
         case 'projG': // fall-through
         case 'projB':
-          return checkUnary(Type.Col, Type.Scalar)
+          return checkUnary(Type.Col, Type.S)
         // Bool -> Bool
         case '!':
           return checkUnary(Type.Bool, Type.Bool)
@@ -84,20 +84,20 @@ const synthExpr = <T>(expr: Expr<T>): TypeChecker<Type> =>
         case '-': // fall-through
         case '*': // fall-through
         case '/': // fall-through
-          return checkBinary(Type.Scalar, Type.Scalar, Type.Scalar)
+          return checkBinary(Type.S, Type.S, Type.S)
         // Vector -> Vector -> Vector
         case '<+>': // fall-through
         case '<->': // fall-through
-          return checkBinary(Type.Vec, Type.Vec, Type.Vec)
+          return checkBinary(Type.V2, Type.V2, Type.V2)
         // Scalar -> Vector -> Vector
         case '*>':
-          return checkBinary(Type.Scalar, Type.Vec, Type.Vec)
+          return checkBinary(Type.S, Type.V2, Type.V2)
         // Scalar -> Scalar -> Bool
         case '<': // fall-through
         case '<=': // fall-through
         case '>': // fall-through
         case '>=':
-          return checkBinary(Type.Scalar, Type.Scalar, Type.Bool)
+          return checkBinary(Type.S, Type.S, Type.Bool)
       }
     },
     'Expr.Call': ({ fn, args }) =>
@@ -175,7 +175,7 @@ const checkExpr = <T extends Type>(type: Type) => (
 //-----------------------------------------------------------------------------
 // Populate Types
 //-----------------------------------------------------------------------------
-const populateExpr = <T>(expr: Expr<T>): TypeChecker<Expr<T>> =>
+const populateExpr = <T extends Type>(expr: Expr<T>): TypeChecker<Expr<T>> =>
   match(expr, {
     'Expr.Var': () => pure(expr),
     'Expr.Lit': () => pure(expr),
@@ -197,7 +197,7 @@ const populateExpr = <T>(expr: Expr<T>): TypeChecker<Expr<T>> =>
     'Expr.Call': ({ fn, args }) =>
       sequenceM(args.map(populateExpr)).map((args) => Expr.Call({ fn, args })),
     'Expr.Paren': ({ expr }) =>
-      populateExpr(expr).map((expr) => Expr.Paren(expr)),
+      populateExpr<T>(expr).map((expr) => Expr.Paren(expr)),
     'Expr.If': ({ condition, thenBranch, elseBranch }) =>
       sequenceM([
         populateExpr(condition),
@@ -222,31 +222,31 @@ const populateExpr = <T>(expr: Expr<T>): TypeChecker<Expr<T>> =>
   })
 
 const defineBuiltins = sequenceM([
-  defineVar('p', Type.Vec),
+  defineVar('p', Type.V2),
   // Scalar -> Scalar
-  defineFunc('abs',      [Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('floor',    [Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('fract',    [Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('sin',      [Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('cos',      [Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('log',      [Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('log2',     [Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('saturate', [Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('sqrt',     [Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('abs',      [Type.S], Type.S), // prettier-ignore
+  defineFunc('floor',    [Type.S], Type.S), // prettier-ignore
+  defineFunc('fract',    [Type.S], Type.S), // prettier-ignore
+  defineFunc('sin',      [Type.S], Type.S), // prettier-ignore
+  defineFunc('cos',      [Type.S], Type.S), // prettier-ignore
+  defineFunc('log',      [Type.S], Type.S), // prettier-ignore
+  defineFunc('log2',     [Type.S], Type.S), // prettier-ignore
+  defineFunc('saturate', [Type.S], Type.S), // prettier-ignore
+  defineFunc('sqrt',     [Type.S], Type.S), // prettier-ignore
   // (Scalar, Scalar) -> Scalar
-  defineFunc('max',  [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('min',  [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('mod',  [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('atan', [Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
-  defineFunc('length', [Type.Vec], Type.Scalar),
+  defineFunc('max',  [Type.S, Type.S], Type.S), // prettier-ignore
+  defineFunc('min',  [Type.S, Type.S], Type.S), // prettier-ignore
+  defineFunc('mod',  [Type.S, Type.S], Type.S), // prettier-ignore
+  defineFunc('atan', [Type.S, Type.S], Type.S), // prettier-ignore
+  defineFunc('length', [Type.V2], Type.S),
   // (Scalar, Scalar, Scalar) -> Scalar
-  defineFunc('smoothstep', [Type.Scalar, Type.Scalar, Type.Scalar], Type.Scalar), // prettier-ignore
+  defineFunc('smoothstep', [Type.S, Type.S, Type.S], Type.S), // prettier-ignore
   // Vec -> Vec
-  defineFunc('absV', [Type.Vec], Type.Vec),
+  defineFunc('absV', [Type.V2], Type.V2),
   // (Vec, Vec) -> Scalar
-  defineFunc('dot', [Type.Vec, Type.Vec], Type.Scalar),
+  defineFunc('dot', [Type.V2, Type.V2], Type.S),
   // (Color, Color, Scalar) -> Color
-  defineFunc('mix', [Type.Col, Type.Col, Type.Scalar], Type.Col),
+  defineFunc('mix', [Type.Col, Type.Col, Type.S], Type.Col),
 ])
 
 export const typeCheck = <T extends Type>(expr: Expr<T>): Expr<T> =>

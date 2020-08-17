@@ -1,5 +1,5 @@
 import { Loc } from './location'
-import { Type, TypeBool, TypeCol, TypeVec } from './types'
+import { Type, TypeBool, TypeCol, TypeV2 } from './types'
 
 export type Builtin =
   | 'length'
@@ -161,12 +161,12 @@ export const Expr = {
     thenBranch,
     elseBranch,
   }),
-  Vec: ({ x, y }): Expr<TypeVec> => ({
+  Vec: <T extends Type>({ x, y }): Expr<T> => ({
     kind: 'Expr.Vec',
     x,
     y,
   }),
-  Col: ({ r, g, b }): Expr<TypeCol> => ({
+  Col: <T extends Type>({ r, g, b }): Expr<T> => ({
     kind: 'Expr.Col',
     r,
     g,

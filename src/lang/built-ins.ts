@@ -1,11 +1,11 @@
 import { S } from '../util/vector'
 import { Expr, UnaryOp, BinaryOp, Builtin } from './ast'
-import { Type, TypeBool, TypeVec, TypeScalar, TypeCol } from './types'
+import { Type, TypeBool, TypeV2, TypeS, TypeCol } from './types'
 
-type ArgS = Expr<TypeScalar>
-type ArgV2 = Expr<TypeVec>
+type ArgS = Expr<TypeS>
+type ArgV2 = Expr<TypeV2>
 type ArgCol = Expr<TypeCol>
-type ScalarRecoord = Record<string, Expr<TypeScalar>>
+type ScalarRecoord = Record<string, Expr<TypeS>>
 
 // Util
 const unary = <T extends Type, TResult extends Type>(op: UnaryOp) => (
@@ -22,11 +22,7 @@ const call = <Args extends Expr<Type>[], TResult extends Type>(
 ) => (...exprs: Args): Expr<TResult> => Expr.Call({ fn: builtin, args: exprs })
 
 // Language Primitives
-type LiteralType<T> = T extends S
-  ? TypeScalar
-  : T extends boolean
-  ? TypeBool
-  : Type
+type LiteralType<T> = T extends S ? TypeS : T extends boolean ? TypeBool : Type
 type Literal = S | boolean
 
 export const var$ = <T extends Type>(name: string): Expr<T> => Expr.Var(name)
@@ -40,59 +36,58 @@ export const if$ = <T extends Type>(
 export const lit = <T extends Literal>(val: T): Expr<LiteralType<T>> =>
   Expr.Lit(val)
 
-export const vec = ({ x, y }: ScalarRecoord): Expr<TypeVec> =>
-  Expr.Vec({ x, y })
+export const vec = ({ x, y }: ScalarRecoord): Expr<TypeV2> => Expr.Vec({ x, y })
 
 export const col = ({ r, g, b }: ScalarRecoord): Expr<TypeCol> =>
   Expr.Col({ r, g, b })
 
 // Scalar
-export const negate = unary<TypeScalar, TypeScalar>('-')
-export const abs = call<[ArgS], TypeScalar>('abs')
-export const floor = call<[ArgS], TypeScalar>('floor')
-export const fract = call<[ArgS], TypeScalar>('fract')
-export const sin = call<[ArgS], TypeScalar>('sin')
-export const cos = call<[ArgS], TypeScalar>('cos')
-export const log = call<[ArgS], TypeScalar>('log')
-export const log2 = call<[ArgS], TypeScalar>('log2')
-export const sqrt = call<[ArgS], TypeScalar>('sqrt')
-export const saturate = call<[ArgS], TypeScalar>('saturate')
-export const smoothstep = call<[ArgS, ArgS, ArgS], TypeScalar>('smoothstep')
+export const negate = unary<TypeS, TypeS>('-')
+export const abs = call<[ArgS], TypeS>('abs')
+export const floor = call<[ArgS], TypeS>('floor')
+export const fract = call<[ArgS], TypeS>('fract')
+export const sin = call<[ArgS], TypeS>('sin')
+export const cos = call<[ArgS], TypeS>('cos')
+export const log = call<[ArgS], TypeS>('log')
+export const log2 = call<[ArgS], TypeS>('log2')
+export const sqrt = call<[ArgS], TypeS>('sqrt')
+export const saturate = call<[ArgS], TypeS>('saturate')
+export const smoothstep = call<[ArgS, ArgS, ArgS], TypeS>('smoothstep')
 
-export const plus = binary<TypeScalar, TypeScalar, TypeScalar>('+')
-export const minus = binary<TypeScalar, TypeScalar, TypeScalar>('-')
-export const times = binary<TypeScalar, TypeScalar, TypeScalar>('*')
-export const div = binary<TypeScalar, TypeScalar, TypeScalar>('/')
-export const atan = call<[ArgS, ArgS], TypeScalar>('atan')
-export const max = call<[ArgS, ArgS], TypeScalar>('max')
-export const min = call<[ArgS, ArgS], TypeScalar>('min')
-export const mod = call<[ArgS, ArgS], TypeScalar>('mod')
+export const plus = binary<TypeS, TypeS, TypeS>('+')
+export const minus = binary<TypeS, TypeS, TypeS>('-')
+export const times = binary<TypeS, TypeS, TypeS>('*')
+export const div = binary<TypeS, TypeS, TypeS>('/')
+export const atan = call<[ArgS, ArgS], TypeS>('atan')
+export const max = call<[ArgS, ArgS], TypeS>('max')
+export const min = call<[ArgS, ArgS], TypeS>('min')
+export const mod = call<[ArgS, ArgS], TypeS>('mod')
 
 // Vector
-export const projX = unary<TypeVec, TypeScalar>('projX')
-export const projY = unary<TypeVec, TypeScalar>('projY')
-export const absV = call<[ArgV2], TypeVec>('absV')
-export const length = call<[ArgV2], TypeScalar>('length')
+export const projX = unary<TypeV2, TypeS>('projX')
+export const projY = unary<TypeV2, TypeS>('projY')
+export const absV = call<[ArgV2], TypeV2>('absV')
+export const length = call<[ArgV2], TypeS>('length')
 
-export const plusV = binary<TypeVec, TypeVec, TypeVec>('<+>')
-export const minusV = binary<TypeVec, TypeVec, TypeVec>('<->')
-export const timesV = binary<TypeScalar, TypeVec, TypeVec>('*>')
-export const dot = call<[ArgV2, ArgV2], TypeScalar>('dot')
+export const plusV = binary<TypeV2, TypeV2, TypeV2>('<+>')
+export const minusV = binary<TypeV2, TypeV2, TypeV2>('<->')
+export const timesV = binary<TypeS, TypeV2, TypeV2>('*>')
+export const dot = call<[ArgV2, ArgV2], TypeS>('dot')
 
 // Color
-export const projR = unary<TypeCol, TypeScalar>('projR')
-export const projG = unary<TypeCol, TypeScalar>('projG')
-export const projB = unary<TypeCol, TypeScalar>('projB')
+export const projR = unary<TypeCol, TypeS>('projR')
+export const projG = unary<TypeCol, TypeS>('projG')
+export const projB = unary<TypeCol, TypeS>('projB')
 export const mix = call<[ArgCol, ArgCol, ArgS], TypeCol>('mix')
 
 // Boolean
 export const not = unary<TypeBool, TypeBool>('!')
 
-export const lt = binary<TypeScalar, TypeScalar, TypeBool>('<')
-export const lteq = binary<TypeScalar, TypeScalar, TypeBool>('<=')
-export const gt = binary<TypeScalar, TypeScalar, TypeBool>('>')
-export const gteq = binary<TypeScalar, TypeScalar, TypeBool>('>=')
-export const eq = binary<TypeScalar, TypeScalar, TypeBool>('==')
-export const neq = binary<TypeScalar, TypeScalar, TypeBool>('!=')
+export const lt = binary<TypeS, TypeS, TypeBool>('<')
+export const lteq = binary<TypeS, TypeS, TypeBool>('<=')
+export const gt = binary<TypeS, TypeS, TypeBool>('>')
+export const gteq = binary<TypeS, TypeS, TypeBool>('>=')
+export const eq = binary<TypeS, TypeS, TypeBool>('==')
+export const neq = binary<TypeS, TypeS, TypeBool>('!=')
 export const and = binary<TypeBool, TypeBool, TypeBool>('&&')
 export const or = binary<TypeBool, TypeBool, TypeBool>('||')

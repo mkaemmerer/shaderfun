@@ -26,9 +26,9 @@ const indentBlock = (doc: Doc<string>): Doc<string> =>
 const printType = (type: Type) =>
   match(type, {
     'Type.Bool': () => str('bool'),
-    'Type.Vec': () => str('vec2'),
+    'Type.V2': () => str('vec2'),
     'Type.Col': () => str('vec3'),
-    'Type.Scalar': () => str('float'),
+    'Type.S': () => str('float'),
   })
 
 // Expressions

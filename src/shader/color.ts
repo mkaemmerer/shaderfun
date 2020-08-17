@@ -19,10 +19,10 @@ import {
   plus,
   times,
 } from '../lang/built-ins'
-import { TypeScalar, TypeCol } from '../lang/types'
+import { TypeS, TypeCol } from '../lang/types'
 
 // Scalar -> Color
-export type ColorRamp = ShaderFunc<TypeScalar, TypeCol>
+export type ColorRamp = ShaderFunc<TypeS, TypeCol>
 
 const TAU = 2 * Math.PI
 const EPSILON = lit(2)
@@ -61,7 +61,7 @@ export const stripeRamp: ColorRamp = outline((d) =>
 )
 
 const periodic = (offset: number, amp: number, freq: number, phase: number) => (
-  d: Expr<TypeScalar>
+  d: Expr<TypeS>
 ) => {
   const wave = cos(times(lit(TAU), plus(times(d, lit(freq)), lit(phase))))
   return plus(lit(offset), times(lit(amp), wave))
