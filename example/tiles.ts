@@ -2,7 +2,7 @@ import {
   Do,
   pure,
   SDF,
-  Program,
+  ShaderProgram,
   composeM,
   tCircle,
   circle,
@@ -37,4 +37,4 @@ const sdf: SDF = (p) =>
     return pure(minus(d, times(lit(10), fac)))
   })
 
-export const program: Program = composeM(sdf, stripeRamp)
+export const program: ShaderProgram = composeM(sdf, stripeRamp)

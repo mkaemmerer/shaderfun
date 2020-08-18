@@ -1,4 +1,4 @@
-import { Program, composeM, flameRamp, Do, pure, decl } from '../src'
+import { ShaderProgram, composeM, flameRamp, Do, pure, decl } from '../src'
 import { Expr } from '../src/lang'
 import {
   projX,
@@ -51,7 +51,7 @@ const ITERS = 200
 const c = vec({ x: lit(-0.4), y: lit(0.6) })
 const juliaFold = iterate(ITERS)(fold(c))
 
-const juliaSet: Program = (p) =>
+const juliaSet = (p) =>
   pure(timesV(lit(1 / 700), p))
     .flatMap((p) => pure([p, lit(0)]))
     .flatMap(juliaFold)
@@ -60,4 +60,4 @@ const juliaSet: Program = (p) =>
     // Map to 0 -> 1 range
     .flatMap((d) => pure(times(d, lit(1 / ITERS))))
 
-export const program: Program = composeM(juliaSet, flameRamp)
+export const program: ShaderProgram = composeM(juliaSet, flameRamp)

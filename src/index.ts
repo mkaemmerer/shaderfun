@@ -1,3 +1,3 @@
 export { drawCanvas } from './canvas'
-export { Program, interpret, composeM, Do, pure, decl } from './lang'
+export { ShaderProgram, interpret, composeM, Do, pure, decl } from './lang'
 export * from './shader'

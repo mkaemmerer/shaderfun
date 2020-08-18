@@ -1,6 +1,6 @@
 import {
   SDF,
-  Program,
+  ShaderProgram,
   compose,
   composeM,
   circle,
@@ -31,4 +31,4 @@ const ball = circle(1)
 
 const sdf: SDF = rotate(-TAU / 12)(scale(300)(sierpinskiFold(ball)))
 
-export const program: Program = composeM(sdf, stripeRamp)
+export const program: ShaderProgram = composeM(sdf, stripeRamp)

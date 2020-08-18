@@ -1,6 +1,6 @@
 import {
   SDF,
-  Program,
+  ShaderProgram,
   compose,
   composeM,
   segment,
@@ -38,4 +38,4 @@ const line = segment({ x: 0, y: 0 }, { x: 1, y: 0 })
 
 const sdf: SDF = scale(600)(kochFold(line))
 
-export const program: Program = composeM(sdf, stripeRamp)
+export const program: ShaderProgram = composeM(sdf, stripeRamp)

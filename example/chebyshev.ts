@@ -1,6 +1,6 @@
 import {
   SDF,
-  Program,
+  ShaderProgram,
   composeM,
   cPolygon,
   stripeRamp,
@@ -26,4 +26,4 @@ const sdf: SDF = dilate(50)(
   )
 )
 
-export const program: Program = composeM(sdf, stripeRamp)
+export const program: ShaderProgram = composeM(sdf, stripeRamp)
